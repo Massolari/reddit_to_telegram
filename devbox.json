@@ -1,0 +1,11 @@
+{
+  "packages": [
+        "github:NixOS/nixpkgs/nixos-unstable#gleam",
+        "github:NixOS/nixpkgs/nixos-unstable#rebar3",
+        "github:NixOS/nixpkgs/nixos-unstable#erlang"
+    ],
+  "shell": {
+    "init_hook": [],
+    "scripts": {}
+  }
+}
