@@ -1,0 +1,7 @@
+*.beam
+*.ez
+.env
+bridges.json
+data.sqlite3
+build
+erl_crash.dump
