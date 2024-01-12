@@ -35,14 +35,15 @@ pub fn short_link(post: Post) -> String {
 }
 
 pub fn get_posts(data: AppData, subreddit: String) -> Result(List(Post), Nil) {
-  let assert Ok(token) = get_token(data)
+  use token <- result.try(get_token(data))
 
   get_hot(token, data, subreddit)
 }
 
 fn get_token(data: AppData) -> Result(String, Nil) {
-  let assert Ok(request) =
-    request.to("https://www.reddit.com/api/v1/access_token")
+  use request <- result.try(request.to(
+    "https://www.reddit.com/api/v1/access_token",
+  ))
 
   let credentials =
     { data.client_id <> ":" <> data.client_secret }
@@ -89,8 +90,11 @@ fn get_hot(
   data: AppData,
   subreddit: String,
 ) -> Result(List(Post), Nil) {
-  let assert Ok(request) =
-    request.to("https://oauth.reddit.com/r/" <> subreddit <> "/hot?limit=10")
+  use request <- result.try(request.to(
+    "https://oauth.reddit.com/r/"
+    <> subreddit
+    <> "/hot?limit=10",
+  ))
 
   request
   |> request.set_header("Authorization", "Bearer " <> token)
