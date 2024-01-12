@@ -18,7 +18,7 @@ REDDIT_CLIENT_SECRET=
 # You can get this by creating a bot with @BotFather
 TELEGRAM_TOKEN=
 ```
-3. Copy the `bridges.example.json` to `bridges.json` and fill in the values for the subreddits and channels you want to bridge:
+3. Copy the `bridges.example.json` file to `bridges.json` and fill in the values for the subreddits and channels you want to bridge:
 ```json
 [
   {
@@ -31,5 +31,5 @@ TELEGRAM_TOKEN=
   }
 ]
 ```
-4. Add your Telegram bot to the channels you want to bridge
+4. Add your Telegram bot as an admin to the channels you want to bridge
 5. Run the script: `gleam run`
