@@ -31,11 +31,13 @@ fn start(data: AppData, bridges: List(Bridge), database: sqlight.Connection) {
         |> database.get_messages(bridge.telegram_channel)
         |> result.unwrap([])
 
-      let new_posts =
-        list.filter(posts, fn(post) { !list.contains(sent_messages, post.id) })
+      let filtered_posts =
+        posts
+        |> filter_sent_posts(sent_messages)
+        |> filter_low_score
 
       let inserted =
-        new_posts
+        filtered_posts
         |> telegram.send_messages(data, bridge.telegram_channel)
         |> list.filter_map(function.identity)
 
@@ -47,4 +49,15 @@ fn start(data: AppData, bridges: List(Bridge), database: sqlight.Connection) {
   }
 
   Nil
+}
+
+fn filter_sent_posts(
+  posts: List(reddit.Post),
+  sent: List(String),
+) -> List(reddit.Post) {
+  list.filter(posts, fn(post) { !list.contains(sent, post.id) })
+}
+
+fn filter_low_score(posts: List(reddit.Post)) -> List(reddit.Post) {
+  list.filter(posts, fn(post) { post.score >= 10 })
 }
