@@ -35,7 +35,7 @@ pub fn get_messages(
     "SELECT thread_id FROM sent_messages WHERE chat_id = ?",
     on: connection,
     with: [sqlight.text(chat_id)],
-    expecting: dynamic.string,
+    expecting: dynamic.element(0, dynamic.string),
   )
 }
 
