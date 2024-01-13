@@ -9,14 +9,23 @@ import gleam/json
 import gleam/list
 import reddit
 
-pub fn send_messages(posts: List(reddit.Post), data: AppData, chat_id: String) {
-  use post <- list.each(posts)
+pub fn send_messages(
+  posts: List(reddit.Post),
+  data: AppData,
+  chat_id: String,
+) -> List(Result(String, Nil)) {
+  use post <- list.map(posts)
 
-  let _ = send(post, data, chat_id)
+  let result = send(post, data, chat_id)
   process.sleep(1000)
+  result
 }
 
-fn send(post: reddit.Post, data: AppData, chat_id: String) {
+fn send(
+  post: reddit.Post,
+  data: AppData,
+  chat_id: String,
+) -> Result(String, Nil) {
   let base_url = "https://api.telegram.org/bot" <> data.telegram_token
 
   let #(path, body) = case post.media {
@@ -36,7 +45,7 @@ fn send(post: reddit.Post, data: AppData, chat_id: String) {
 
   let assert Ok(request) = request.to(base_url <> "/" <> path)
 
-  use response <- result.map(
+  use response <- result.try(
     request
     |> request.set_method(http.Post)
     |> request.set_body(json.to_string(body))
@@ -44,23 +53,31 @@ fn send(post: reddit.Post, data: AppData, chat_id: String) {
     |> hackney.send
     |> result.map_error(fn(e) {
       io.debug(e)
-      e
+      Nil
     }),
   )
 
   case response.status == 200 {
     True -> {
-      Nil
+      Ok(post.id)
     }
     False -> {
       io.debug(response)
-      Nil
+      Error(Nil)
     }
   }
 }
 
+fn chat_id_as_link(chat_id: String) {
+  "[" <> chat_id <> "](" <> chat_id <> ")"
+}
+
 fn media_caption(post: reddit.Post, chat_id: String) {
-  post.title <> "\n" <> reddit.short_link(post) <> "\n\n" <> chat_id
+  post.title
+  <> "\n"
+  <> reddit.short_link(post)
+  <> "\n\n"
+  <> chat_id_as_link(chat_id)
 }
 
 fn caption_json_field(post: reddit.Post, chat_id: String) {
@@ -109,7 +126,7 @@ fn text_encode(post: reddit.Post, chat_id: String) {
         <> reddit.short_link(post)
         <> "\n"
         <> "\n"
-        <> chat_id,
+        <> chat_id_as_link(chat_id),
       ),
     ),
     #("parse_mode", json.string("Markdown")),
