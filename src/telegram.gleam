@@ -43,7 +43,7 @@ fn send(
     }
   }
 
-  let assert Ok(request) = request.to(base_url <> "/" <> path)
+  use request <- result.try(request.to(base_url <> "/" <> path))
 
   use response <- result.try(
     request

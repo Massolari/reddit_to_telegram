@@ -10,11 +10,19 @@ import database
 import sqlight
 
 pub fn main() {
-  let assert Ok(app_data) = app_data.get()
-  let assert Ok(bridges) = bridge.get()
-  let database = database.connect()
+  let result = {
+    use app_data <- result.try(app_data.get())
+    use bridges <- result.try(bridge.get())
+    use database <- result.map(database.connect())
 
-  start(app_data, bridges, database)
+    let _ = start(app_data, bridges, database)
+    database
+  }
+
+  case result {
+    Ok(_) -> io.println("Done")
+    Error(error) -> io.println("Error: " <> error)
+  }
 }
 
 fn start(data: AppData, bridges: List(Bridge), database: sqlight.Connection) {

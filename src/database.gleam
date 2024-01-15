@@ -6,7 +6,10 @@ import gleam/io
 import gleam/string
 
 pub fn connect() {
-  let assert Ok(connection) = sqlight.open("file:data.sqlite3")
+  use connection <- result.map(
+    sqlight.open("file:data.sqlite3")
+    |> result.map_error(fn(error) { error.message }),
+  )
 
   let _ = setup(connection)
 
