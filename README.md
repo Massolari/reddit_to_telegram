@@ -4,23 +4,28 @@ This is a script that will send hot posts from a subreddit to a Telegram channel
 
 ## Usage
 
+### From docker
+
 > [!NOTE]  
 > Requirements:
-> - [Erlang](https://www.erlang.org/downloads)
+> - [Docker](https://docs.docker.com/engine/install/)
 
-1. Download the _script_ file from the [release page](https://github.com/Massolari/reddit_to_telegram/releases)
-2. Follow the [setup](#setup) instructions
-3. Add your Telegram bot as an admin to the channels you want to bridge
-4. Give the _script_ permission to be executed
+1. Follow the [setup](#setup) instructions
+2. Add your Telegram bot as an admin to the channels you want to bridge
+3. Run the image replacing the volumes with the paths to your files:
 ```bash
-chmod +x ./reddit_to_telegram
-```
-6. Run the script:
-```bash
-./reddit_to_telegram
+docker run \
+  --volume /path/to/.env:/app/.env \
+  --volume /path/to/bridges.json:/app/bridges.json \
+  --volume /path/to/db:/app/db \
+  massolari/reddit-to-telegram:v1.0
 ```
 
-## Run from source
+> [!TIP]
+> You can create a shell script with the above command and run it as a cron job.
+
+
+### From source
 
 > [!NOTE]  
 > Requirements:
@@ -37,7 +42,7 @@ gleam run
 
 ## Setup
 
-1. Set the following environment variables:
+1. Create an `.env` file and fill in the values (you can use `.env.example` as a template):
 ```.env
 # Your Reddit username and password
 REDDIT_USERNAME=
@@ -51,7 +56,7 @@ REDDIT_CLIENT_SECRET=
 TELEGRAM_TOKEN=
 ```
 
-2. Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge:
+2. Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge (you can use `bridges.example.json` as a template):
 ```json
 [
   {
