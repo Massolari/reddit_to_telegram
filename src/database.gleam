@@ -7,7 +7,7 @@ import gleam/string
 
 pub fn connect() {
   use connection <- result.map(
-    sqlight.open("file:data.sqlite3")
+    sqlight.open("file:./db/data.sqlite3")
     |> result.map_error(fn(error) { error.message }),
   )
 
