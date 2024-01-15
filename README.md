@@ -1,3 +1,5 @@
+![Docker Build](https://github.com/Massolari/reddit_to_telegram/actions/workflows/docker-image.yml/badge.svg)
+
 # Reddit to Telegram
 
 This is a script that will send hot posts from a subreddit to a Telegram channel.
