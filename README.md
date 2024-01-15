@@ -2,10 +2,32 @@
 
 This is a script that will send hot posts from a subreddit to a Telegram channel.
 
-## Usage
+## Install from Releases
+
+Requirements:
+- [Erlang](https://www.erlang.org/downloads)
+
+1. Download the _script_ file from the [release page](https://github.com/Massolari/reddit_to_telegram/releases)
+2. Follow the [setup](#setup) instructions
+3. Add your Telegram bot as an admin to the channels you want to bridge
+4. Run the script:
+```bash
+./reddit_to_telegram
+```
+
+## Install from source
 
 1. Clone this repository
-2. Copy the `.env.example` file to `.env` and fill in the values:
+2. Follow the [setup](#setup) instructions
+3. Add your Telegram bot as an admin to the channels you want to bridge
+4. Run the script:
+```bash
+gleam run
+```
+
+## Setup
+
+1. Set the following environment variables:
 ```.env
 # Your Reddit username and password
 REDDIT_USERNAME=
@@ -18,7 +40,8 @@ REDDIT_CLIENT_SECRET=
 # You can get this by creating a bot with @BotFather
 TELEGRAM_TOKEN=
 ```
-3. Copy the `bridges.example.json` file to `bridges.json` and fill in the values for the subreddits and channels you want to bridge:
+
+2. Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge:
 ```json
 [
   {
@@ -31,5 +54,4 @@ TELEGRAM_TOKEN=
   }
 ]
 ```
-4. Add your Telegram bot as an admin to the channels you want to bridge
-5. Run the script: `gleam run`
+
