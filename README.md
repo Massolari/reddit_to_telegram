@@ -2,20 +2,30 @@
 
 This is a script that will send hot posts from a subreddit to a Telegram channel.
 
-## Install from Releases
+## Usage
 
-Requirements:
-- [Erlang](https://www.erlang.org/downloads)
+> [!NOTE]  
+> Requirements:
+> - [Erlang](https://www.erlang.org/downloads)
 
 1. Download the _script_ file from the [release page](https://github.com/Massolari/reddit_to_telegram/releases)
 2. Follow the [setup](#setup) instructions
 3. Add your Telegram bot as an admin to the channels you want to bridge
-4. Run the script:
+4. Give the _script_ permission to be executed
+```bash
+chmod +x ./reddit_to_telegram
+```
+6. Run the script:
 ```bash
 ./reddit_to_telegram
 ```
 
-## Install from source
+## Run from source
+
+> [!NOTE]  
+> Requirements:
+> - [Erlang](https://www.erlang.org/downloads)
+> - [Gleam](https://gleam.run/getting-started/installing/)
 
 1. Clone this repository
 2. Follow the [setup](#setup) instructions
