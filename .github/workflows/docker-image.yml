@@ -26,4 +26,4 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: massolari/reddit-to-telegram:${{ github.ref_name }}
+          tags: massolari/reddit-to-telegram:${{ github.ref_name }},massolari/reddit-to-telegram:latest
