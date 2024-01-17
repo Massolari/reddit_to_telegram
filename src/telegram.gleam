@@ -84,6 +84,10 @@ fn caption_json_field(post: reddit.Post, chat_id: String) {
   #("caption", json.string(media_caption(post, chat_id)))
 }
 
+fn parse_mode_json_field() {
+  #("parse_mode", json.string("Markdown"))
+}
+
 fn chat_id_json_field(id: String) {
   #("chat_id", json.string(id))
 }
@@ -91,6 +95,7 @@ fn chat_id_json_field(id: String) {
 fn photo_encode(url: String, post: reddit.Post, chat_id: String) {
   json.object([
     #("photo", json.string(url)),
+    parse_mode_json_field(),
     caption_json_field(post, chat_id),
     chat_id_json_field(chat_id),
   ])
@@ -99,6 +104,7 @@ fn photo_encode(url: String, post: reddit.Post, chat_id: String) {
 fn animation_encode(url: String, post: reddit.Post, chat_id: String) {
   json.object([
     #("animation", json.string(url)),
+    parse_mode_json_field(),
     caption_json_field(post, chat_id),
     chat_id_json_field(chat_id),
   ])
@@ -107,6 +113,7 @@ fn animation_encode(url: String, post: reddit.Post, chat_id: String) {
 fn video_encode(url: String, post: reddit.Post, chat_id: String) {
   json.object([
     #("video", json.string(url)),
+    parse_mode_json_field(),
     caption_json_field(post, chat_id),
     chat_id_json_field(chat_id),
   ])
@@ -129,7 +136,7 @@ fn text_encode(post: reddit.Post, chat_id: String) {
         <> chat_id_as_link(chat_id),
       ),
     ),
-    #("parse_mode", json.string("Markdown")),
+    parse_mode_json_field(),
     chat_id_json_field(chat_id),
   ])
 }
