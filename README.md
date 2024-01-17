@@ -20,7 +20,7 @@ docker run \
   --volume /path/to/.env:/app/.env \
   --volume /path/to/bridges.json:/app/bridges.json \
   --volume /path/to/db:/app/db \
-  massolari/reddit-to-telegram:v1.0
+  massolari/reddit-to-telegram:latest
 ```
 
 > [!TIP]
