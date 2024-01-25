@@ -68,11 +68,11 @@ fn send(
   }
 }
 
-fn chat_id_as_link(chat_id: String) {
+pub fn chat_id_as_link(chat_id: String) {
   "[" <> chat_id <> "](" <> chat_id <> ")"
 }
 
-fn media_caption(post: reddit.Post, chat_id: String) {
+pub fn media_caption(post: reddit.Post, chat_id: String) {
   post.title
   <> "\n"
   <> reddit.short_link(post)

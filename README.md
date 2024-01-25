@@ -1,4 +1,5 @@
 ![Docker Build](https://github.com/Massolari/reddit_to_telegram/actions/workflows/docker-image.yml/badge.svg)
+![Tests](https://github.com/Massolari/reddit_to_telegram/actions/workflows/test.yml/badge.svg)
 
 # Reddit to Telegram
 

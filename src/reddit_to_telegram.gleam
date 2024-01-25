@@ -2,6 +2,7 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/function
+import gleam/int
 import reddit
 import telegram
 import bridge.{type Bridge}
@@ -11,12 +12,14 @@ import sqlight
 
 pub fn main() {
   let result = {
+    io.println("Loading app data...")
     use app_data <- result.try(app_data.get())
+    io.println("Loading bridges...")
     use bridges <- result.try(bridge.get())
+    io.println("Connecting to database...")
     use database <- result.map(database.connect())
 
-    let _ = start(app_data, bridges, database)
-    database
+    start(app_data, bridges, database)
   }
 
   case result {
@@ -25,11 +28,16 @@ pub fn main() {
   }
 }
 
-fn start(data: AppData, bridges: List(Bridge), database: sqlight.Connection) {
+fn start(
+  data: AppData,
+  bridges: List(Bridge),
+  database: sqlight.Connection,
+) -> Nil {
   io.println("Starting...")
 
   use bridge <- list.each(bridges)
 
+  io.println("Getting posts from subreddit " <> bridge.subreddit <> "...")
   let result_posts = reddit.get_posts(data, bridge.subreddit)
 
   case result_posts {
@@ -42,12 +50,24 @@ fn start(data: AppData, bridges: List(Bridge), database: sqlight.Connection) {
       let filtered_posts =
         posts
         |> filter_sent_posts(sent_messages)
-        |> filter_low_score
+        |> filter_low_score(10)
 
+      io.println(
+        "Sending messages to telegram channel "
+        <> bridge.telegram_channel
+        <> "...",
+      )
       let inserted =
         filtered_posts
         |> telegram.send_messages(data, bridge.telegram_channel)
         |> list.filter_map(function.identity)
+
+      io.println(
+        inserted
+        |> list.length
+        |> int.to_string
+        <> " messages sent",
+      )
 
       let _ = database.add_messages(database, inserted, bridge.telegram_channel)
 
@@ -59,13 +79,16 @@ fn start(data: AppData, bridges: List(Bridge), database: sqlight.Connection) {
   Nil
 }
 
-fn filter_sent_posts(
+pub fn filter_sent_posts(
   posts: List(reddit.Post),
   sent: List(String),
 ) -> List(reddit.Post) {
   list.filter(posts, fn(post) { !list.contains(sent, post.id) })
 }
 
-fn filter_low_score(posts: List(reddit.Post)) -> List(reddit.Post) {
-  list.filter(posts, fn(post) { post.score >= 10 })
+pub fn filter_low_score(
+  posts: List(reddit.Post),
+  minimum: Int,
+) -> List(reddit.Post) {
+  list.filter(posts, fn(post) { post.score >= minimum })
 }
