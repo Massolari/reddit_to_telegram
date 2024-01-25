@@ -120,19 +120,26 @@ fn video_encode(url: String, post: reddit.Post, chat_id: String) {
 }
 
 fn text_encode(post: reddit.Post, chat_id: String) {
+  let external_url = case post.external_url {
+    Ok(url) -> "\n" <> url
+    Error(_) -> ""
+  }
+
+  let text = case post.text {
+    "" -> ""
+    _ -> "\n\n" <> post.text
+  }
+
   json.object([
     #(
       "text",
       json.string(
         post.title
-        <> "\n"
-        <> "\n"
-        <> post.text
-        <> "\n"
-        <> "\n"
+        <> external_url
+        <> text
+        <> "\n\n"
         <> reddit.short_link(post)
-        <> "\n"
-        <> "\n"
+        <> "\n\n"
         <> chat_id_as_link(chat_id),
       ),
     ),

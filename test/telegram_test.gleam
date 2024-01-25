@@ -8,6 +8,7 @@ const reddit_post = reddit.Post(
   text: "Post text",
   score: 10,
   media: Error(Nil),
+  external_url: Error(Nil),
 )
 
 pub fn chat_id_as_link_test() {

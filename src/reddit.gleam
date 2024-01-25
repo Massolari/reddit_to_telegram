@@ -17,6 +17,7 @@ pub type Post {
     text: String,
     score: Int,
     media: Result(Media, Nil),
+    external_url: Result(String, Nil),
   )
 }
 
@@ -122,13 +123,14 @@ fn posts_decoder() -> dynamic.Decoder(List(Post)) {
 }
 
 fn post_decoder() -> dynamic.Decoder(Post) {
-  dynamic.decode5(
+  dynamic.decode6(
     Post,
     dynamic.field(named: "id", of: dynamic.string),
     dynamic.field(named: "title", of: dynamic.string),
     dynamic.field(named: "selftext", of: dynamic.string),
     dynamic.field(named: "score", of: dynamic.int),
     media_decoder(),
+    external_url_decoder(),
   )
 }
 
@@ -253,4 +255,28 @@ fn is_url_image(url: String) -> Bool {
 
 fn is_url_gif(url: String) -> Bool {
   string.ends_with(url, ".gif") || string.ends_with(url, ".gifv")
+}
+
+fn external_url_decoder() -> dynamic.Decoder(Result(String, Nil)) {
+  fn(json) {
+    dynamic.field(named: "is_self", of: fn(dynamic_is_self) {
+      dynamic.bool(dynamic_is_self)
+      |> result.try(fn(is_self) {
+        case is_self {
+          True -> Ok(Error(Nil))
+          False -> {
+            dynamic.field(named: "url", of: fn(dynamic_url) {
+              dynamic.string(dynamic_url)
+              |> result.map(fn(url) {
+                case string.contains(url, "reddit") {
+                  True -> Error(Nil)
+                  _ -> Ok(url)
+                }
+              })
+            })(json)
+          }
+        }
+      })
+    })(json)
+  }
 }

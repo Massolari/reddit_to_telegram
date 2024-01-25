@@ -7,6 +7,7 @@ const post = Post(
   text: "bar",
   score: 10,
   media: Error(Nil),
+  external_url: Error(Nil),
 )
 
 pub fn short_link_test() {
