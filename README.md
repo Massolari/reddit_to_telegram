@@ -3,7 +3,7 @@
 
 # Reddit to Telegram
 
-This is a script that will send hot posts from a subreddit to a Telegram channel.
+This is a script that will send hot/new/top/rising posts from a subreddit to a Telegram channel.
 
 ## Usage
 
@@ -63,13 +63,10 @@ TELEGRAM_TOKEN=
 ```json
 [
   {
-    "subreddit": "golang",
-    "channel": "@golang"
+    "subreddit": "gleam",
+    "reddit_sort": "hot", // new, top, rising
+    "telegram_channel": "@r_gleam"
   },
-  {
-    "subreddit": "rust",
-    "channel": "@rustlang"
-  }
 ]
 ```
 

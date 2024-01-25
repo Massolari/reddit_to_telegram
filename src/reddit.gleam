@@ -21,6 +21,13 @@ pub type Post {
   )
 }
 
+pub type Sort {
+  Hot
+  New
+  Top
+  Rising
+}
+
 pub type Media {
   Media(url: String, type_: MediaType)
 }
@@ -35,10 +42,14 @@ pub fn short_link(post: Post) -> String {
   "https://redd.it/" <> post.id
 }
 
-pub fn get_posts(data: AppData, subreddit: String) -> Result(List(Post), Nil) {
+pub fn get_posts(
+  data: AppData,
+  subreddit: String,
+  sort: Sort,
+) -> Result(List(Post), Nil) {
   use token <- result.try(get_token(data))
 
-  get_hot(token, data, subreddit)
+  get_threads(token, data, subreddit, sort)
 }
 
 fn get_token(data: AppData) -> Result(String, Nil) {
@@ -86,15 +97,25 @@ fn set_user_agent(request: Request(a), data: AppData) -> Request(a) {
   )
 }
 
-fn get_hot(
+fn get_threads(
   token: String,
   data: AppData,
   subreddit: String,
+  sort: Sort,
 ) -> Result(List(Post), Nil) {
+  let sort_string = case sort {
+    Hot -> "hot"
+    New -> "new"
+    Top -> "top"
+    Rising -> "rising"
+  }
+
   use request <- result.try(request.to(
     "https://oauth.reddit.com/r/"
     <> subreddit
-    <> "/hot?limit=10",
+    <> "/"
+    <> sort_string
+    <> "?limit=10",
   ))
 
   request

@@ -1,6 +1,7 @@
 [
   {
     "subreddit": "neovim",
+    "reddit_sort": "hot",
     "telegram_channel": "@reddit_test_channel"
   }
 ]

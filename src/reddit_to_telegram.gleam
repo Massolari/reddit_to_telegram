@@ -38,7 +38,8 @@ fn start(
   use bridge <- list.each(bridges)
 
   io.println("Getting posts from subreddit " <> bridge.subreddit <> "...")
-  let result_posts = reddit.get_posts(data, bridge.subreddit)
+  let result_posts =
+    reddit.get_posts(data, bridge.subreddit, bridge.reddit_sort)
 
   case result_posts {
     Ok(posts) -> {

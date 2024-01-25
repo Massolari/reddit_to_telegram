@@ -2,9 +2,11 @@ import gleam/dynamic
 import simplifile
 import gleam/json
 import gleam/result
+import gleam/option
+import reddit
 
 pub type Bridge {
-  Bridge(subreddit: String, telegram_channel: String)
+  Bridge(subreddit: String, reddit_sort: reddit.Sort, telegram_channel: String)
 }
 
 pub fn get() -> Result(List(Bridge), String) {
@@ -19,9 +21,30 @@ fn bridges_decoder(json: String) -> Result(List(Bridge), String) {
 }
 
 fn bridge_decoder() -> dynamic.Decoder(Bridge) {
-  dynamic.decode2(
+  dynamic.decode3(
     Bridge,
     dynamic.field("subreddit", dynamic.string),
+    reddit_sort_decoder(),
     dynamic.field("telegram_channel", dynamic.string),
   )
+}
+
+fn reddit_sort_decoder() -> dynamic.Decoder(reddit.Sort) {
+  fn(json) {
+    json
+    |> dynamic.optional_field("reddit_sort", fn(dynamic_sort) {
+      dynamic_sort
+      |> dynamic.string
+      |> result.try(fn(sort) {
+        case sort {
+          "hot" -> Ok(reddit.Hot)
+          "new" -> Ok(reddit.New)
+          "top" -> Ok(reddit.Top)
+          "rising" -> Ok(reddit.Rising)
+          _ -> Error([])
+        }
+      })
+    })
+    |> result.map(option.unwrap(_, reddit.Hot))
+  }
 }
