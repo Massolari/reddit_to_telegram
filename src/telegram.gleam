@@ -1,11 +1,14 @@
 import app_data.{type AppData}
+import form_data
+import gleam/bit_array
 import gleam/hackney
 import gleam/http
 import gleam/http/request
+import gleam/int
 import gleam/io
 import gleam/erlang/process
 import gleam/result
-import gleam/json
+import gleam/json.{type Json}
 import gleam/list
 import reddit
 
@@ -13,37 +16,64 @@ pub fn send_messages(
   posts: List(reddit.Post),
   data: AppData,
   chat_id: String,
-) -> List(Result(String, Nil)) {
-  use post <- list.map(posts)
+) -> List(Result(String, String)) {
+  use post, index <- list.index_map(posts)
 
-  let result = send(post, data, chat_id)
-  process.sleep(1000)
-  result
+  // Add a delay between each message to avoid rate limiting
+  case index {
+    0 -> Nil
+    _ -> process.sleep(1000)
+  }
+
+  send(post, data, chat_id)
 }
 
 fn send(
   post: reddit.Post,
   data: AppData,
   chat_id: String,
-) -> Result(String, Nil) {
-  let base_url = "https://api.telegram.org/bot" <> data.telegram_token
-
-  let #(path, body) = case post.media {
+) -> Result(String, String) {
+  case post.media {
     Ok(reddit.Media(url, reddit.Image)) -> {
-      #("sendPhoto", photo_encode(url, post, chat_id))
+      send_json("sendPhoto", photo_encode(url, post, chat_id), post, data)
     }
     Ok(reddit.Media(url, reddit.Gif)) -> {
-      #("sendAnimation", animation_encode(url, post, chat_id))
+      send_json(
+        "sendAnimation",
+        animation_encode(url, post, chat_id),
+        post,
+        data,
+      )
     }
     Ok(reddit.Media(url, reddit.Video)) -> {
-      #("sendVideo", video_encode(url, post, chat_id))
+      url
+      |> reddit.get_video
+      |> result.try(send_video(_, chat_id, post, data))
+      |> result.try_recover(fn(e) {
+        io.println("Couldn't send video: " <> e)
+        io.println("Sending message as text instead...")
+
+        send_json("sendMessage", text_encode(post, chat_id), post, data)
+      })
     }
     Error(_) -> {
-      #("sendMessage", text_encode(post, chat_id))
+      send_json("sendMessage", text_encode(post, chat_id), post, data)
     }
   }
+}
 
-  use request <- result.try(request.to(base_url <> "/" <> path))
+fn send_json(
+  path: String,
+  body: Json,
+  post: reddit.Post,
+  data: AppData,
+) -> Result(String, String) {
+  let base_url = "https://api.telegram.org/bot" <> data.telegram_token
+
+  use request <- result.try(
+    request.to(base_url <> "/" <> path)
+    |> result.map_error(fn(_) { "Couldn't create JSON request" }),
+  )
 
   use response <- result.try(
     request
@@ -53,7 +83,7 @@ fn send(
     |> hackney.send
     |> result.map_error(fn(e) {
       io.debug(e)
-      Nil
+      "Error sending JSON request"
     }),
   )
 
@@ -62,8 +92,69 @@ fn send(
       Ok(post.id)
     }
     False -> {
+      Error(response.body)
+    }
+  }
+}
+
+fn send_video(
+  filename: String,
+  chat_id: String,
+  post: reddit.Post,
+  data: AppData,
+) -> Result(String, String) {
+  let base_url = "https://api.telegram.org/bot" <> data.telegram_token
+
+  use request <- result.try(
+    request.to(base_url <> "/sendVideo")
+    |> result.map_error(fn(_) { "Couldn't create video request" }),
+  )
+
+  let form =
+    form_data.new([
+      form_data.Text("parse_mode", "Markdown"),
+      form_data.Text("caption", media_caption(post, chat_id)),
+      form_data.Text("chat_id", chat_id),
+      form_data.File(path: "./" <> filename, name: "video", extra_headers: [
+        #("Content-Type", "video/mp4"),
+      ]),
+    ])
+
+  io.println("Sending video...")
+  use response <- result.try(
+    request
+    |> request.set_method(http.Post)
+    |> request.set_body(form.body)
+    |> request.set_header("Content-Length", int.to_string(form.length))
+    |> request.set_header(
+      "Content-Type",
+      "multipart/form-data; boundary="
+      <> form.boundary,
+    )
+    |> hackney.send_bits
+    |> result.map_error(fn(e) {
+      io.debug(e)
+      "Error sending video"
+    }),
+  )
+
+  case response.status {
+    200 -> {
+      io.println("Video sent!")
+
+      Ok(post.id)
+    }
+    status -> {
       io.debug(response)
-      Error(Nil)
+
+      Error(
+        "Error from server while sending video, HTTP status: "
+        <> int.to_string(status)
+        <> case bit_array.to_string(response.body) {
+          Ok(body) -> " " <> body
+          Error(_) -> ""
+        },
+      )
     }
   }
 }
@@ -104,15 +195,6 @@ fn photo_encode(url: String, post: reddit.Post, chat_id: String) {
 fn animation_encode(url: String, post: reddit.Post, chat_id: String) {
   json.object([
     #("animation", json.string(url)),
-    parse_mode_json_field(),
-    caption_json_field(post, chat_id),
-    chat_id_json_field(chat_id),
-  ])
-}
-
-fn video_encode(url: String, post: reddit.Post, chat_id: String) {
-  json.object([
-    #("video", json.string(url)),
     parse_mode_json_field(),
     caption_json_field(post, chat_id),
     chat_id_json_field(chat_id),

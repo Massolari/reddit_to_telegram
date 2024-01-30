@@ -1,5 +1,6 @@
 import app_data.{type AppData}
 import gleam/bit_array
+import gleam/bytes_builder
 import gleam/bool
 import gleam/dynamic
 import gleam/hackney
@@ -7,8 +8,11 @@ import gleam/http
 import gleam/http/request.{type Request}
 import gleam/io
 import gleam/json
+import gleam/list
 import gleam/result
 import gleam/string
+import shellout
+import simplifile
 
 pub type Post {
   Post(
@@ -156,22 +160,22 @@ fn post_decoder() -> dynamic.Decoder(Post) {
 }
 
 fn media_decoder() -> dynamic.Decoder(Result(Media, Nil)) {
-  fn(json) {
-    dynamic.any([
-      fn(dynamic) {
-        is_video_decoder(json)(dynamic)
-        |> result.map(Ok)
-      },
-      fn(dynamic) {
-        url_decoder()(dynamic)
-        |> result.map(Ok)
-      },
-      fn(_) { Ok(Error(Nil)) },
-    ])(json)
-  }
+  dynamic.any([
+    fn(dynamic) {
+      is_video_decoder(dynamic)
+      |> result.map(Ok)
+    },
+    fn(dynamic) {
+      url_decoder()(dynamic)
+      |> result.map(Ok)
+    },
+    fn(_) { Ok(Error(Nil)) },
+  ])
 }
 
-fn is_video_decoder(json: dynamic.Dynamic) -> dynamic.Decoder(Media) {
+fn is_video_decoder(
+  json: dynamic.Dynamic,
+) -> Result(Media, List(dynamic.DecodeError)) {
   dynamic.field(named: "is_video", of: fn(dynamic_is_video) {
     dynamic.bool(dynamic_is_video)
     |> result.try(fn(is_video) {
@@ -183,12 +187,10 @@ fn is_video_decoder(json: dynamic.Dynamic) -> dynamic.Decoder(Media) {
               named: "reddit_video",
               of: dynamic.decode2(
                 fn(url: String, is_gif: Bool) {
-                  let media = case is_gif {
+                  case is_gif {
                     True -> Media(url, Gif)
                     False -> Media(url, Video)
                   }
-
-                  media
                 },
                 dynamic.field(named: "fallback_url", of: dynamic.string),
                 dynamic.field(named: "is_gif", of: dynamic.bool),
@@ -199,7 +201,7 @@ fn is_video_decoder(json: dynamic.Dynamic) -> dynamic.Decoder(Media) {
         False -> Error([])
       }
     })
-  })
+  })(json)
 }
 
 fn url_decoder() -> dynamic.Decoder(Media) {
@@ -300,4 +302,107 @@ fn external_url_decoder() -> dynamic.Decoder(Result(String, Nil)) {
       })
     })(json)
   }
+}
+
+pub fn get_video(url: String) -> Result(String, String) {
+  let video_filename = "video.mp4"
+  let audio_filename = "audio.mp4"
+
+  use audio_url <- result.try(
+    url
+    |> string.split("DASH")
+    |> list.first
+    |> result.map(fn(url) { url <> "DASH_AUDIO_128.mp4" })
+    |> result.map_error(fn(_) { "Error getting audio url" }),
+  )
+
+  use request <- result.try(
+    request.to(url)
+    |> result.map_error(fn(_) { "Error creating video request" }),
+  )
+
+  io.println("Downloading video...")
+
+  use video_response <- result.try(
+    request
+    |> request.set_body(bytes_builder.new())
+    |> hackney.send_bits
+    |> result.map_error(fn(e) {
+      io.debug(e)
+      "Error getting video"
+    }),
+  )
+  io.println("Downloaded video")
+
+  io.println("Writing video file...")
+  use _ <- result.try(
+    simplifile.write_bits(video_filename, video_response.body)
+    |> result.map_error(fn(_) { "Error writing video file" }),
+  )
+
+  use request <- result.try(
+    request.to(audio_url)
+    |> result.map_error(fn(_) { "Error creating audio request" }),
+  )
+
+  io.println("Downloading audio...")
+  use audio_response <- result.try(
+    request
+    |> request.set_body(bytes_builder.new())
+    |> hackney.send_bits
+    |> result.map_error(fn(_) { "Error getting audio" }),
+  )
+  io.println("Downloaded audio")
+
+  io.println("Writing audio file...")
+  use _ <- result.try(
+    simplifile.write_bits(audio_filename, audio_response.body)
+    |> result.map_error(fn(_) { "Error writing audio file" }),
+  )
+
+  let filename = "video_with_audio.mp4"
+
+  io.println("Merging video and audio...")
+  use _ <- result.try(
+    shellout.command(
+      run: "ffmpeg",
+      with: [
+        "-i",
+        video_filename,
+        "-i",
+        audio_filename,
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-strict",
+        "experimental",
+        filename,
+        "-hide_banner",
+        "-loglevel",
+        "panic",
+        "-y",
+      ],
+      in: ".",
+      opt: [],
+    )
+    |> result.map_error(fn(error) { error.1 }),
+  )
+  io.println("Merged video and audio")
+
+  io.println("Removing video and audio files...")
+  let rm_result =
+    shellout.command(
+      run: "rm",
+      with: [video_filename, audio_filename],
+      in: ".",
+      opt: [],
+    )
+
+  case rm_result {
+    Ok(_) -> io.println("Removed video and audio files")
+    Error(_) -> io.println("Error removing video and audio files")
+  }
+
+  Ok(filename)
 }

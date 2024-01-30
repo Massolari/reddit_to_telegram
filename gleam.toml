@@ -18,6 +18,7 @@ gleam_erlang = "~> 0.24"
 gleam_json = "~> 0.7"
 dot_env = "~> 0.2"
 sqlight = "~> 0.9"
+shellout = "~> 1.5"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

@@ -2,6 +2,8 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/function
+import gleam/pair
+import gleam/string
 import gleam/int
 import reddit
 import telegram
@@ -58,10 +60,16 @@ fn start(
         <> bridge.telegram_channel
         <> "...",
       )
-      let inserted =
+      let #(inserted, errors) =
         filtered_posts
         |> telegram.send_messages(data, bridge.telegram_channel)
-        |> list.filter_map(function.identity)
+        |> list.partition(with: result.is_ok)
+        |> pair.map_first(list.filter_map(_, function.identity))
+        |> pair.map_second(fn(error) {
+          error
+          |> list.map(result.unwrap_error(_, ""))
+          |> string.join("\n")
+        })
 
       io.println(
         inserted

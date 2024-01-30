@@ -1,5 +1,6 @@
 {
   "packages": [
+        "github:NixOS/nixpkgs/nixos-unstable#ffmpeg",
         "github:NixOS/nixpkgs/nixos-unstable#gleam",
         "github:NixOS/nixpkgs/nixos-unstable#rebar3",
         "github:NixOS/nixpkgs/nixos-unstable#erlang",
