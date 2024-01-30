@@ -9,6 +9,7 @@ import reddit
 import telegram
 import bridge.{type Bridge}
 import app_data.{type AppData}
+import app_result.{type AppResult, AppError, AppOk, AppWarning}
 import database
 import sqlight
 
@@ -24,8 +25,30 @@ pub fn main() {
     start(app_data, bridges, database)
   }
 
+  io.println("Done!")
+
   case result {
-    Ok(_) -> io.println("Done")
+    Ok(warnings_errors) -> {
+      let #(warnings, errors) = app_result.partition(warnings_errors)
+
+      case warnings {
+        [] -> Nil
+        _ -> {
+          io.println("Warnings:")
+
+          list.each(warnings, io.println)
+        }
+      }
+
+      case errors {
+        [] -> Nil
+        _ -> {
+          io.println("Errors: ")
+
+          list.each(errors, io.println)
+        }
+      }
+    }
     Error(error) -> io.println("Error: " <> error)
   }
 }
@@ -34,58 +57,66 @@ fn start(
   data: AppData,
   bridges: List(Bridge),
   database: sqlight.Connection,
-) -> Nil {
+) -> List(AppResult(String)) {
   io.println("Starting...")
 
-  use bridge <- list.each(bridges)
+  use bridge <- list.map(bridges)
 
   io.println("Getting posts from subreddit " <> bridge.subreddit <> "...")
-  let result_posts =
+
+  use posts <- app_result.try(
     reddit.get_posts(data, bridge.subreddit, bridge.reddit_sort)
+    |> result.map_error(fn(error) {
+      "Error getting posts for the subreddit "
+      <> bridge.subreddit
+      <> ": "
+      <> error
+    }),
+  )
 
-  case result_posts {
-    Ok(posts) -> {
-      let sent_messages =
-        database
-        |> database.get_messages(bridge.telegram_channel)
-        |> result.unwrap([])
+  let sent_messages =
+    database
+    |> database.get_messages(bridge.telegram_channel)
+    |> result.unwrap([])
 
-      let filtered_posts =
-        posts
-        |> filter_sent_posts(sent_messages)
-        |> filter_low_score(10)
+  let filtered_posts =
+    posts
+    |> filter_sent_posts(sent_messages)
+    |> filter_low_score(10)
 
-      io.println(
-        "Sending messages to telegram channel "
-        <> bridge.telegram_channel
-        <> "...",
-      )
-      let #(inserted, errors) =
-        filtered_posts
-        |> telegram.send_messages(data, bridge.telegram_channel)
-        |> list.partition(with: result.is_ok)
-        |> pair.map_first(list.filter_map(_, function.identity))
-        |> pair.map_second(fn(error) {
-          error
-          |> list.map(result.unwrap_error(_, ""))
-          |> string.join("\n")
-        })
+  io.println(
+    "Sending messages to telegram channel "
+    <> bridge.telegram_channel
+    <> "...",
+  )
+  let #(inserted, errors) =
+    filtered_posts
+    |> telegram.send_messages(data, bridge.telegram_channel)
+    |> list.partition(with: result.is_ok)
+    |> pair.map_first(list.filter_map(_, function.identity))
+    |> pair.map_second(fn(error) {
+      error
+      |> list.map(result.unwrap_error(_, ""))
+    })
 
-      io.println(
-        inserted
-        |> list.length
-        |> int.to_string
-        <> " messages sent",
-      )
+  io.println(
+    inserted
+    |> list.length
+    |> int.to_string
+    <> " messages sent",
+  )
 
-      let _ = database.add_messages(database, inserted, bridge.telegram_channel)
+  let _ = database.add_messages(database, inserted, bridge.telegram_channel)
 
-      Nil
-    }
-    Error(_) -> io.println("Error getting posts")
+  let error_string = string.join(errors, "\n")
+
+  case inserted, errors {
+    [], [_, ..] -> AppError(error_string)
+
+    _, [_, ..] -> AppWarning(error_string)
+
+    _, _ -> AppOk("")
   }
-
-  Nil
 }
 
 pub fn filter_sent_posts(

@@ -50,16 +50,17 @@ pub fn get_posts(
   data: AppData,
   subreddit: String,
   sort: Sort,
-) -> Result(List(Post), Nil) {
+) -> Result(List(Post), String) {
   use token <- result.try(get_token(data))
 
   get_threads(token, data, subreddit, sort)
 }
 
-fn get_token(data: AppData) -> Result(String, Nil) {
-  use request <- result.try(request.to(
-    "https://www.reddit.com/api/v1/access_token",
-  ))
+fn get_token(data: AppData) -> Result(String, String) {
+  use request <- result.try(
+    request.to("https://www.reddit.com/api/v1/access_token")
+    |> result.map_error(fn(_) { "Error creating token request" }),
+  )
 
   let credentials =
     { data.client_id <> ":" <> data.client_secret }
@@ -78,16 +79,15 @@ fn get_token(data: AppData) -> Result(String, Nil) {
   )
   |> request.set_method(http.Post)
   |> hackney.send
-  |> result.map_error(fn(_) { Nil })
+  |> result.map_error(fn(_) { "Error getting the token" })
   |> result.try(fn(response) {
     json.decode(
       from: response.body,
       using: dynamic.field(named: "access_token", of: dynamic.string),
     )
     |> result.map_error(fn(_) {
-      io.println("Error decoding the token")
       io.debug(response)
-      Nil
+      "Error decoding the token"
     })
   })
 }
@@ -106,7 +106,7 @@ fn get_threads(
   data: AppData,
   subreddit: String,
   sort: Sort,
-) -> Result(List(Post), Nil) {
+) -> Result(List(Post), String) {
   let sort_string = case sort {
     Hot -> "hot"
     New -> "new"
@@ -114,25 +114,27 @@ fn get_threads(
     Rising -> "rising"
   }
 
-  use request <- result.try(request.to(
-    "https://oauth.reddit.com/r/"
-    <> subreddit
-    <> "/"
-    <> sort_string
-    <> "?limit=10",
-  ))
+  use request <- result.try(
+    request.to(
+      "https://oauth.reddit.com/r/"
+      <> subreddit
+      <> "/"
+      <> sort_string
+      <> "?limit=10",
+    )
+    |> result.map_error(fn(_) { "Error creating threads request" }),
+  )
 
   request
   |> request.set_header("Authorization", "Bearer " <> token)
   |> set_user_agent(data)
   |> hackney.send
-  |> result.map_error(fn(_) { Nil })
+  |> result.map_error(fn(_) { "Error getting the threads" })
   |> result.try(fn(response) {
     json.decode(from: response.body, using: posts_decoder())
     |> result.map_error(fn(_) {
-      io.println("Error decoding posts")
       io.debug(response)
-      Nil
+      "Error decoding posts"
     })
   })
 }
