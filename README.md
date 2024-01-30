@@ -34,6 +34,7 @@ docker run \
 > Requirements:
 > - [Erlang](https://www.erlang.org/downloads)
 > - [Gleam](https://gleam.run/getting-started/installing/)
+> - [ffmpeg](https://ffmpeg.org/download.html)
 
 1. Clone this repository
 2. Follow the [setup](#setup) instructions
@@ -63,10 +64,16 @@ TELEGRAM_TOKEN=
 ```json
 [
   {
-    "subreddit": "gleam",
-    "reddit_sort": "hot", // new, top, rising
+    "subreddit": "gleamlang",
+    "reddit_sort": "hot",
     "telegram_channel": "@r_gleam"
   },
 ]
 ```
+
+| Field | Description |
+| --- | --- |
+| `subreddit` | The subreddit to bridge in. It's the last part of the URL, for example, for the URL https://www.reddit.com/r/gleamlang the subreddit is `gleamlang` |
+| `reddit_sort` | The sorting method to use when fetching posts from Reddit. Available options are `hot`, `new`, `top` and `rising` |
+| `telegram_channel` | The Telegram channel to send the posts to. It's the channel username with the `@` prefix, for example, for the URL https://t.me/r_gleam the channel is `@r_gleam` |
 
