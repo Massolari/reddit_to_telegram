@@ -7,7 +7,7 @@ const reddit_post = reddit.Post(
   title: "Post title",
   text: "Post text",
   score: 10,
-  media: Error(Nil),
+  media: [],
   external_url: Error(Nil),
 )
 

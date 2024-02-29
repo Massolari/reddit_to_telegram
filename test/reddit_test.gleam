@@ -6,7 +6,7 @@ const post = Post(
   title: "foo",
   text: "bar",
   score: 10,
-  media: Error(Nil),
+  media: [],
   external_url: Error(Nil),
 )
 

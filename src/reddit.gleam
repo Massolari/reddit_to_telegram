@@ -2,6 +2,7 @@ import app_data.{type AppData}
 import gleam/bit_array
 import gleam/bytes_builder
 import gleam/bool
+import gleam/dict
 import gleam/dynamic
 import gleam/hackney
 import gleam/http
@@ -20,7 +21,7 @@ pub type Post {
     title: String,
     text: String,
     score: Int,
-    media: Result(Media, Nil),
+    media: List(Media),
     external_url: Result(String, Nil),
   )
 }
@@ -120,7 +121,7 @@ fn get_threads(
       <> subreddit
       <> "/"
       <> sort_string
-      <> "?limit=10",
+      <> "?limit=20",
     )
     |> result.map_error(fn(_) { "Error creating threads request" }),
   )
@@ -161,17 +162,18 @@ fn post_decoder() -> dynamic.Decoder(Post) {
   )
 }
 
-fn media_decoder() -> dynamic.Decoder(Result(Media, Nil)) {
+fn media_decoder() -> dynamic.Decoder(List(Media)) {
   dynamic.any([
     fn(dynamic) {
       is_video_decoder(dynamic)
-      |> result.map(Ok)
+      |> result.map(list.prepend([], _))
     },
     fn(dynamic) {
       url_decoder()(dynamic)
-      |> result.map(Ok)
+      |> result.map(list.prepend([], _))
     },
-    fn(_) { Ok(Error(Nil)) },
+    fn(dynamic) { media_metadata_decoder()(dynamic) },
+    fn(_) { Ok([]) },
   ])
 }
 
@@ -213,58 +215,62 @@ fn url_decoder() -> dynamic.Decoder(Media) {
   })
 }
 
-// TODO: It's not possible for Telegram to show images from reddit, so we need to
-// download them and send them as files.
-//
-// fn media_metadata_decoder() -> dynamic.Decoder(Media) {
-//   dynamic.field(named: "media_metadata", of: fn(dynamic_media_metadata) {
-//     dynamic.dict(of: dynamic.string, to: dynamic.dynamic)(dynamic_media_metadata,
-//     )
-//     |> result.try(fn(dict_dynamic) {
-//       dict_dynamic
-//       |> dict.values
-//       // TODO: handle multiple images
-//       |> list.first
-//       // List(DecodeError)
-//       |> result.map_error(fn(_) { [] })
-//       |> result.try(metadata_decoder())
-//     })
-//   })
-// }
-//
-// fn metadata_decoder() -> dynamic.Decoder(Media) {
-//   fn(dynamic_metadata) {
-//     dynamic.field(named: "e", of: fn(dynamic_e) {
-//       dynamic.string(dynamic_e)
-//       |> result.try(fn(e) {
-//         case e {
-//           "Image" -> {
-//             dynamic.field(
-//               named: "s",
-//               of: dynamic.field(named: "u", of: fn(dynamic_url) {
-//                 dynamic.string(dynamic_url)
-//                 |> result.map(fn(url) { Media(url, Image) })
-//               }),
-//             )(dynamic_metadata)
-//           }
-//           "AnimatedImage" -> {
-//             dynamic.field(
-//               named: "s",
-//               of: dynamic.field(named: "gif", of: fn(dynamic_url) {
-//                 dynamic.string(dynamic_url)
-//                 |> result.map(fn(url) { Media(url, Gif) })
-//               }),
-//             )(dynamic_metadata)
-//           }
-//           _ -> {
-//             io.println("Unknown media type: " <> e)
-//             Error([])
-//           }
-//         }
-//       })
-//     })(dynamic_metadata)
-//   }
-// }
+fn media_metadata_decoder() -> dynamic.Decoder(List(Media)) {
+  dynamic.field(named: "media_metadata", of: fn(dynamic_media_metadata) {
+    use dict_dynamic <- result.try(
+      dynamic_media_metadata
+      |> dynamic.dict(of: dynamic.string, to: dynamic.dynamic)
+      |> result.map(dict.values),
+    )
+
+    use acc, dynamic <- list.try_fold(dict_dynamic, [])
+
+    dynamic
+    |> metadata_decoder()
+    |> result.map_error(fn(_) { [] })
+    |> result.map(fn(media) { list.prepend(acc, media) })
+  })
+}
+
+fn metadata_decoder() -> dynamic.Decoder(Media) {
+  fn(dynamic_metadata) {
+    dynamic.field(named: "e", of: fn(dynamic_e) {
+      dynamic.string(dynamic_e)
+      |> result.try(fn(e) {
+        case e {
+          "Image" -> {
+            dynamic.field(
+              named: "s",
+              of: dynamic.field(named: "u", of: fn(dynamic_url) {
+                dynamic.string(dynamic_url)
+                |> result.map(fn(url) {
+                  case url {
+                    "https://preview.redd.it/" <> path ->
+                      Media("https://i.redd.it/" <> path, Image)
+                    _ -> Media(url, Image)
+                  }
+                })
+              }),
+            )(dynamic_metadata)
+          }
+          "AnimatedImage" -> {
+            dynamic.field(
+              named: "s",
+              of: dynamic.field(named: "gif", of: fn(dynamic_url) {
+                dynamic.string(dynamic_url)
+                |> result.map(fn(url) { Media(url, Gif) })
+              }),
+            )(dynamic_metadata)
+          }
+          _ -> {
+            io.println("Unknown media type: " <> e)
+            Error([])
+          }
+        }
+      })
+    })(dynamic_metadata)
+  }
+}
 
 fn media_from_url(url: String) -> Result(Media, dynamic.DecodeErrors) {
   use <- bool.guard(when: is_url_image(url), return: Ok(Media(url, Image)))

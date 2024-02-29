@@ -1,7 +1,6 @@
 import gleam/io
 import gleam/list
 import gleam/result
-import gleam/function
 import gleam/pair
 import gleam/string
 import gleam/int
@@ -85,25 +84,20 @@ fn start(
     |> filter_low_score(10)
 
   io.println(
-    "Sending messages to telegram channel "
-    <> bridge.telegram_channel
-    <> "...",
+    "Sending messages to telegram channel " <> bridge.telegram_channel <> "...",
   )
   let #(inserted, errors) =
     filtered_posts
     |> telegram.send_messages(data, bridge.telegram_channel)
     |> list.partition(with: result.is_ok)
-    |> pair.map_first(list.filter_map(_, function.identity))
-    |> pair.map_second(fn(error) {
-      error
-      |> list.map(result.unwrap_error(_, ""))
-    })
+    |> pair.map_first(result.values)
+    |> pair.map_second(list.map(_, result.unwrap_error(_, "")))
 
   io.println(
     inserted
-    |> list.length
-    |> int.to_string
-    <> " messages sent",
+      |> list.length
+      |> int.to_string
+      <> " messages sent",
   )
 
   let _ = database.add_messages(database, inserted, bridge.telegram_channel)
