@@ -212,7 +212,8 @@ fn send_video(
     |> request.set_header("Content-Length", int.to_string(form.length))
     |> request.set_header(
       "Content-Type",
-      "multipart/form-data; boundary=" <> form.boundary,
+      "multipart/form-data; boundary="
+      <> form.boundary,
     )
     |> hackney.send_bits
     |> result.map_error(fn(e) {
@@ -232,11 +233,11 @@ fn send_video(
 
       Error(
         "Error from server while sending video, HTTP status: "
-          <> int.to_string(status)
-          <> case bit_array.to_string(response.body) {
-            Ok(body) -> " " <> body
-            Error(_) -> ""
-          },
+        <> int.to_string(status)
+        <> case bit_array.to_string(response.body) {
+          Ok(body) -> " " <> body
+          Error(_) -> ""
+        },
       )
     }
   }
@@ -249,11 +250,7 @@ fn send_animation(
   chat_id: String,
   data: AppData,
 ) -> Result(String, String) {
-  send_json(
-    "sendAnimation",
-    animation_encode(url, post, chat_id),
-    post_id,
-    data,
+  send_json("sendAnimation", animation_encode(url, post, chat_id), post_id, data,
   )
 }
 
@@ -319,12 +316,12 @@ fn text_encode(post: reddit.Post, chat_id: String) {
       "text",
       json.string(
         post.title
-          <> external_url
-          <> text
-          <> "\n\n"
-          <> reddit.short_link(post)
-          <> "\n\n"
-          <> chat_id_as_link(chat_id),
+        <> external_url
+        <> text
+        <> "\n\n"
+        <> reddit.short_link(post)
+        <> "\n\n"
+        <> chat_id_as_link(chat_id),
       ),
     ),
     parse_mode_json_field(),
