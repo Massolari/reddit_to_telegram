@@ -154,11 +154,24 @@ fn post_decoder() -> dynamic.Decoder(Post) {
     Post,
     dynamic.field(named: "id", of: dynamic.string),
     dynamic.field(named: "title", of: dynamic.string),
-    dynamic.field(named: "selftext", of: dynamic.string),
+    text_decoder(),
     dynamic.field(named: "score", of: dynamic.int),
     media_decoder(),
     external_url_decoder(),
   )
+}
+
+fn text_decoder() -> dynamic.Decoder(String) {
+  dynamic.field(named: "selftext", of: fn(dynamic) {
+    dynamic.string(dynamic)
+    |> result.map(fn(text) {
+      text
+      |> string.replace("&amp;", "")
+      |> string.replace("#x200B;\n\n", "")
+      |> string.replace("#x200B;\n", "")
+      |> string.replace("#x200B;", "")
+    })
+  })
 }
 
 fn media_decoder() -> dynamic.Decoder(List(Media)) {
