@@ -97,8 +97,7 @@ fn set_user_agent(request: Request(a), data: AppData) -> Request(a) {
   request.set_header(
     request,
     "User-Agent",
-    "reddit_to_telegram by /u/"
-    <> data.username,
+    "reddit_to_telegram by /u/" <> data.username,
   )
 }
 

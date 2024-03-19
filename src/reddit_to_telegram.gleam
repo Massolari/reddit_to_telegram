@@ -84,9 +84,7 @@ fn start(
     |> filter_low_score(10)
 
   io.println(
-    "Sending messages to telegram channel "
-    <> bridge.telegram_channel
-    <> "...",
+    "Sending messages to telegram channel " <> bridge.telegram_channel <> "...",
   )
   let #(inserted, errors) =
     filtered_posts

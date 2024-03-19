@@ -67,8 +67,7 @@ pub fn add_messages(
     |> string.join(", ")
 
   let sql =
-    "INSERT INTO sent_messages (thread_id, chat_id) VALUES "
-    <> query_values
+    "INSERT INTO sent_messages (thread_id, chat_id) VALUES " <> query_values
 
   sqlight.query(
     sql,

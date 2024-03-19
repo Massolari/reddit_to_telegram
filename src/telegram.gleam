@@ -172,12 +172,8 @@ fn send_json(
   )
 
   case response.status == 200 {
-    True -> {
-      Ok(post_id)
-    }
-    False -> {
-      Error(response.body)
-    }
+    True -> Ok(post_id)
+    False -> Error("Error sending post " <> post_id <> ": " <> response.body)
   }
 }
 
@@ -212,8 +208,7 @@ fn send_video(
     |> request.set_header("Content-Length", int.to_string(form.length))
     |> request.set_header(
       "Content-Type",
-      "multipart/form-data; boundary="
-      <> form.boundary,
+      "multipart/form-data; boundary=" <> form.boundary,
     )
     |> hackney.send_bits
     |> result.map_error(fn(e) {

@@ -28,7 +28,10 @@ pub fn new(parts: List(Entry)) -> FormData {
     |> list.map(fn(part) {
       case part {
         File(path, name, extra_headers) ->
-          dynamic.from(File(path: path, name: name, extra_headers: extra_headers,
+          dynamic.from(File(
+            path: path,
+            name: name,
+            extra_headers: extra_headers,
           ))
         Text(name, value) -> dynamic.from(#(name, value))
       }
