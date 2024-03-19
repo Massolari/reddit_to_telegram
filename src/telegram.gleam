@@ -12,6 +12,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import markdown
 import reddit
 
 type InputMedia {
@@ -192,7 +193,7 @@ fn send_video(
 
   let form =
     form_data.new([
-      form_data.Text("parse_mode", "Markdown"),
+      form_data.Text("parse_mode", "HTML"),
       form_data.Text("caption", media_caption(post, chat_id)),
       form_data.Text("chat_id", chat_id),
       form_data.File(path: "./" <> filename, name: "video", extra_headers: [
@@ -245,20 +246,16 @@ fn send_animation(
   chat_id: String,
   data: AppData,
 ) -> Result(String, String) {
-  send_json("sendAnimation", animation_encode(url, post, chat_id), post_id, data,
+  send_json(
+    "sendAnimation",
+    animation_encode(url, post, chat_id),
+    post_id,
+    data,
   )
 }
 
-pub fn chat_id_as_link(chat_id: String) {
-  "[" <> chat_id <> "](" <> chat_id <> ")"
-}
-
 pub fn media_caption(post: reddit.Post, chat_id: String) {
-  post.title
-  <> "\n"
-  <> reddit.short_link(post)
-  <> "\n\n"
-  <> chat_id_as_link(chat_id)
+  post.title <> "\n" <> reddit.short_link(post) <> "\n\n" <> chat_id
 }
 
 fn caption_json_field(post: reddit.Post, chat_id: String) {
@@ -266,7 +263,7 @@ fn caption_json_field(post: reddit.Post, chat_id: String) {
 }
 
 fn parse_mode_json_field() {
-  #("parse_mode", json.string("Markdown"))
+  #("parse_mode", json.string("HTML"))
 }
 
 fn chat_id_json_field(id: String) {
@@ -301,24 +298,22 @@ fn text_encode(post: reddit.Post, chat_id: String) {
     Error(_) -> ""
   }
 
-  let text = case post.text {
+  let post_text = case post.text {
     "" -> ""
     _ -> "\n\n" <> post.text
   }
 
+  let text =
+    post.title
+    <> external_url
+    <> markdown.reddit_to_telegram(post_text)
+    <> "\n\n"
+    <> reddit.short_link(post)
+    <> "\n\n"
+    <> chat_id
+
   json.object([
-    #(
-      "text",
-      json.string(
-        post.title
-        <> external_url
-        <> text
-        <> "\n\n"
-        <> reddit.short_link(post)
-        <> "\n\n"
-        <> chat_id_as_link(chat_id),
-      ),
-    ),
+    #("text", json.string(text)),
     parse_mode_json_field(),
     chat_id_json_field(chat_id),
   ])

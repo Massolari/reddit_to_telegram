@@ -11,12 +11,6 @@ const reddit_post = reddit.Post(
   external_url: Error(Nil),
 )
 
-pub fn chat_id_as_link_test() {
-  "a"
-  |> telegram.chat_id_as_link
-  |> should.equal("[a](a)")
-}
-
 pub fn media_caption_test() {
   reddit_post
   |> telegram.media_caption("a")
