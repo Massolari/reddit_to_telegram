@@ -1,11 +1,11 @@
 {
   "packages": [
-        "github:NixOS/nixpkgs/nixos-unstable#ffmpeg",
-        "github:NixOS/nixpkgs/nixos-unstable#gleam",
-        "github:NixOS/nixpkgs/nixos-unstable#rebar3",
-        "github:NixOS/nixpkgs/nixos-unstable#erlang",
-        "github:NixOS/nixpkgs/nixos-unstable#sqlite"
-    ],
+    "github:NixOS/nixpkgs/nixpkgs-unstable#ffmpeg",
+    "github:NixOS/nixpkgs/nixpkgs-unstable#gleam",
+    "github:NixOS/nixpkgs/nixpkgs-unstable#rebar3",
+    "github:NixOS/nixpkgs/nixpkgs-unstable#erlang",
+    "github:NixOS/nixpkgs/nixpkgs-unstable#sqlite"
+  ],
   "shell": {
     "init_hook": [],
     "scripts": {}
