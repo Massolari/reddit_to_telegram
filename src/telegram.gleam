@@ -12,7 +12,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
-import markdown
+import reddit/markdown
 import reddit
 
 type InputMedia {
