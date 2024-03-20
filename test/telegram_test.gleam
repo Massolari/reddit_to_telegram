@@ -18,6 +18,6 @@ pub fn media_caption_test() {
     "Post title
 https://redd.it/1
 
-[a](a)",
+a",
   )
 }
