@@ -16,6 +16,7 @@ pub fn media_caption_test() {
   |> telegram.media_caption("a")
   |> should.equal(
     "Post title
+
 https://redd.it/1
 
 a",
