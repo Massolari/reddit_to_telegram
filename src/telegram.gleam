@@ -255,7 +255,7 @@ fn send_animation(
 }
 
 pub fn media_caption(post: reddit.Post, chat_id: String) {
-  post.title <> "\n" <> reddit.short_link(post) <> "\n\n" <> chat_id
+  post.title <> "\n\n" <> reddit.short_link(post) <> "\n\n" <> chat_id
 }
 
 fn caption_json_field(post: reddit.Post, chat_id: String) {
