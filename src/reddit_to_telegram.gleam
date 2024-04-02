@@ -24,10 +24,10 @@ pub fn main() {
     start(app_data, bridges, database)
   }
 
-  io.println("Done!")
-
   case result {
     Ok(warnings_errors) -> {
+      io.println("Done!")
+
       let #(warnings, errors) = app_result.partition(warnings_errors)
 
       case warnings {
