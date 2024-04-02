@@ -46,7 +46,7 @@ gleam run
 
 ## Setup
 
-1. Create an `.env` file and fill in the values (you can use `.env.example` as a template):
+1. Create a `.env` file and fill in the values (you can use `.env.example` as a template):
 ```.env
 # Your Reddit username and password
 REDDIT_USERNAME=
@@ -59,6 +59,9 @@ REDDIT_CLIENT_SECRET=
 # You can get this by creating a bot with @BotFather
 TELEGRAM_TOKEN=
 ```
+
+> [!IMPORTANT]
+> The comments **must** be removed from the `.env` file or the values will not be loaded.
 
 2. Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge (you can use `bridges.example.json` as a template):
 ```json
