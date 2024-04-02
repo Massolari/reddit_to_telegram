@@ -70,7 +70,7 @@ TELEGRAM_TOKEN=
     "subreddit": "gleamlang",
     "reddit_sort": "hot",
     "telegram_channel": "@r_gleam"
-  },
+  }
 ]
 ```
 
