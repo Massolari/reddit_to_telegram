@@ -61,7 +61,7 @@ TELEGRAM_TOKEN=
 ```
 
 > [!IMPORTANT]
-> The comments **must** be removed from the `.env` file or the values will not be loaded.
+> The comments (lines starting with `#`) are for documentation purposes only and **must not** be included in the `.env` file. Otherwise, the values will not be loaded.
 
 2. Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge (you can use `bridges.example.json` as a template):
 ```json
