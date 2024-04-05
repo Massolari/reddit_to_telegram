@@ -17,7 +17,7 @@ gleam_hackney = "~> 1.2"
 simplifile = "~> 1.1"
 gleam_erlang = "~> 0.24"
 gleam_json = "~> 0.7"
-dot_env = "~> 0.2"
+dot_env = "~> 0.4"
 sqlight = "~> 0.9"
 shellout = "~> 1.5"
 
