@@ -53,6 +53,7 @@ REDDIT_USERNAME=
 REDDIT_PASSWORD=
 # Reddit client ID and secret
 # You can get these by creating an app on https://www.reddit.com/prefs/apps
+# Make sure to set the app type to "script"
 REDDIT_CLIENT_ID=
 REDDIT_CLIENT_SECRET=
 # Telegram bot token
