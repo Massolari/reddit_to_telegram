@@ -6,7 +6,12 @@ import gleam/option
 import reddit
 
 pub type Bridge {
-  Bridge(subreddit: String, reddit_sort: reddit.Sort, telegram_channel: String)
+  Bridge(
+    subreddit: String,
+    reddit_sort: reddit.Sort,
+    telegram_channel: String,
+    minimum_upvotes: Int,
+  )
 }
 
 pub fn get() -> Result(List(Bridge), String) {
@@ -21,11 +26,12 @@ fn bridges_decoder(json: String) -> Result(List(Bridge), String) {
 }
 
 fn bridge_decoder() -> dynamic.Decoder(Bridge) {
-  dynamic.decode3(
+  dynamic.decode4(
     Bridge,
     dynamic.field("subreddit", dynamic.string),
     reddit_sort_decoder(),
     dynamic.field("telegram_channel", dynamic.string),
+    minimum_upvotes_decoder(),
   )
 }
 
@@ -46,5 +52,14 @@ fn reddit_sort_decoder() -> dynamic.Decoder(reddit.Sort) {
       })
     })
     |> result.map(option.unwrap(_, reddit.Hot))
+  }
+}
+
+fn minimum_upvotes_decoder() -> dynamic.Decoder(Int) {
+  fn(json) {
+    json
+    |> dynamic.field("minimum_upvotes", dynamic.int)
+    |> result.unwrap(10)
+    |> Ok
   }
 }

@@ -77,4 +77,5 @@ TELEGRAM_TOKEN=
 | `subreddit` | The subreddit to bridge in. It's the last part of the URL, for example, for the URL https://www.reddit.com/r/gleamlang the subreddit is `gleamlang` |
 | `reddit_sort` | The sorting method to use when fetching posts from Reddit. Available options are `hot`, `new`, `top` and `rising` |
 | `telegram_channel` | The Telegram channel to send the posts to. It's the channel username with the `@` prefix, for example, for the URL https://t.me/r_gleam the channel is `@r_gleam` |
+| `minimum_upvotes` | (Optional) The minimum number of upvotes a post must have to be sent to the channel. Default is `10` |
 

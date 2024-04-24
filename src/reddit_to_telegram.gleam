@@ -81,7 +81,7 @@ fn start(
   let filtered_posts =
     posts
     |> filter_sent_posts(sent_messages)
-    |> filter_low_score(10)
+    |> filter_low_score(bridge.minimum_upvotes)
 
   io.println(
     "Sending messages to telegram channel " <> bridge.telegram_channel <> "...",
