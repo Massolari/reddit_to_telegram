@@ -1,4 +1,5 @@
 import app_data.{type AppData}
+import gleam/dynamic
 import form_data
 import gleam/bit_array
 import gleam/erlang/process
@@ -172,9 +173,21 @@ fn send_json(
     }),
   )
 
-  case response.status == 200 {
-    True -> Ok(post_id)
-    False -> Error("Error sending post " <> post_id <> ": " <> response.body)
+  case response.status {
+    200 -> Ok(post_id)
+    429 -> {
+      let retry_after =
+        response.body
+        |> json.decode(retry_after_decoder())
+        |> result.unwrap(60)
+
+      io.println(
+        "Rate limited, waiting " <> int.to_string(retry_after) <> " seconds...",
+      )
+      process.sleep(retry_after * 1000)
+      send_json(path, body, post_id, data)
+    }
+    _ -> Error("Error sending post " <> post_id <> ": " <> response.body)
   }
 }
 
@@ -344,4 +357,8 @@ fn input_media_encode(input_media: InputMedia) -> Json {
       }),
     ),
   ])
+}
+
+fn retry_after_decoder() -> dynamic.Decoder(Int) {
+  dynamic.field("parameters", dynamic.field("retry_after", dynamic.int))
 }
