@@ -54,7 +54,7 @@ fn send(
   chat_id: String,
 ) -> Result(String, String) {
   case post.media {
-    [] -> send_json("sendMessage", text_encode(post, chat_id), post.id, data)
+    [] -> send_text(post, post.id, data)
     [media] -> send_single_media(post, chat_id, data, media)
     multiple -> send_group_media(post, chat_id, data, multiple)
   }
@@ -79,7 +79,7 @@ fn send_single_media(
         io.println("Couldn't send video: " <> e)
         io.println("Sending message as text instead...")
 
-        send_json("sendMessage", text_encode(post, chat_id), post.id, data)
+        send_text(post, chat_id, data)
       })
     }
   }
@@ -99,7 +99,7 @@ fn send_group_media(
   |> list.map(result.unwrap_error(_, ""))
   |> fn(errors) {
     case errors {
-      [] -> send_json("sendMessage", text_encode(post, chat_id), post.id, data)
+      [] -> send_text(post, chat_id, data)
       _ -> Error(string.join(errors, "\n"))
     }
   }
@@ -146,6 +146,16 @@ fn get_input_media(media: reddit.Media) -> InputMedia {
     reddit.Gif -> InputMedia(url: media.url, type_: Animation)
     reddit.Video -> InputMedia(url: media.url, type_: Video)
   }
+}
+
+fn send_text(
+  post: reddit.Post,
+  chat_id: String,
+  data: AppData,
+) -> Result(String, String) {
+  text_encode(post, chat_id)
+  |> list.try_each(send_json("sendMessage", _, post.id, data))
+  |> result.map(fn(_) { post.id })
 }
 
 fn send_json(
@@ -305,7 +315,7 @@ fn animation_encode(url: String, post: Option(reddit.Post), chat_id: String) {
   |> json.object
 }
 
-fn text_encode(post: reddit.Post, chat_id: String) {
+fn text_encode(post: reddit.Post, chat_id: String) -> List(Json) {
   let external_url = case post.external_url {
     Ok(url) -> "\n" <> url
     Error(_) -> ""
@@ -325,11 +335,17 @@ fn text_encode(post: reddit.Post, chat_id: String) {
     <> "\n\n"
     <> chat_id
 
-  json.object([
-    #("text", json.string(text)),
-    parse_mode_json_field(),
-    chat_id_json_field(chat_id),
-  ])
+  text
+  |> string.to_graphemes
+  |> list.sized_chunk(4096)
+  |> list.map(string.join(_, ""))
+  |> list.map(fn(chunk) {
+    json.object([
+      #("text", json.string(chunk)),
+      parse_mode_json_field(),
+      chat_id_json_field(chat_id),
+    ])
+  })
 }
 
 fn media_group_encode(
