@@ -1,12 +1,12 @@
-import gleam/list
+import gleam/bytes_tree.{type BytesTree}
 import gleam/dynamic
-import gleam/bytes_builder.{type BytesBuilder}
+import gleam/list
 
 @external(erlang, "hackney_multipart", "encode_form")
 fn encode_form(
   parts: List(dynamic.Dynamic),
   boundary: String,
-) -> #(BytesBuilder, Int)
+) -> #(BytesTree, Int)
 
 @external(erlang, "hackney_multipart", "boundary")
 fn generate_boundary() -> String
@@ -17,7 +17,7 @@ pub type Entry {
 }
 
 pub type FormData {
-  FormData(body: BytesBuilder, length: Int, boundary: String)
+  FormData(body: BytesTree, length: Int, boundary: String)
 }
 
 pub fn new(parts: List(Entry)) -> FormData {

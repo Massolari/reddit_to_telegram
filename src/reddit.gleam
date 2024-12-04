@@ -1,7 +1,7 @@
 import app_data.{type AppData}
 import gleam/bit_array
-import gleam/bytes_builder
 import gleam/bool
+import gleam/bytes_tree
 import gleam/dict
 import gleam/dynamic
 import gleam/hackney
@@ -345,7 +345,7 @@ pub fn get_video(url: String) -> Result(String, String) {
 
   use video_response <- result.try(
     request
-    |> request.set_body(bytes_builder.new())
+    |> request.set_body(bytes_tree.new())
     |> hackney.send_bits
     |> result.map_error(fn(e) {
       io.debug(e)
@@ -368,7 +368,7 @@ pub fn get_video(url: String) -> Result(String, String) {
   io.println("Downloading audio...")
   use audio_response <- result.try(
     request
-    |> request.set_body(bytes_builder.new())
+    |> request.set_body(bytes_tree.new())
     |> hackney.send_bits
     |> result.map_error(fn(_) { "Error getting audio" }),
   )

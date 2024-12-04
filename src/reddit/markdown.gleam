@@ -1,8 +1,8 @@
 import gleam/io
-import gleam/string
-import gleam/regex.{type Regex, Match}
-import gleam/result
 import gleam/option.{type Option, None, Some}
+import gleam/regexp.{type Regexp, Match}
+import gleam/result
+import gleam/string
 
 type ParseResult {
   ParseResult(from: String, result: String)
@@ -139,7 +139,7 @@ fn apply_link(parsing: ParseResult) -> ParseResult {
       }
     }
     None ->
-      ParseResult(string.drop_left(parsing.from, 1), parsing.result <> "[")
+      ParseResult(string.drop_start(parsing.from, 1), parsing.result <> "[")
   }
 }
 
@@ -166,7 +166,7 @@ fn apply_inline_code(parsing: ParseResult) -> ParseResult {
     }
     None ->
       ParseResult(
-        from: string.drop_left(parsing.from, 1),
+        from: string.drop_start(parsing.from, 1),
         result: parsing.result <> "`",
       )
   }
@@ -174,13 +174,13 @@ fn apply_inline_code(parsing: ParseResult) -> ParseResult {
 
 fn apply_quote(parsing: ParseResult) -> ParseResult {
   let style_applied = case
-    regex.scan(with: quote_regex(), content: parsing.from)
+    regexp.scan(with: quote_regex(), content: parsing.from)
   {
     [Match(content: _, submatches: [Some(quote)])] -> {
       let parsed_quote =
         quote
         // Get rid of the leading "\n> "
-        |> string.drop_left(3)
+        |> string.drop_start(3)
         |> string.replace("\n> ", "\n")
 
       let replaced =
@@ -214,7 +214,7 @@ fn apply_quote(parsing: ParseResult) -> ParseResult {
     }
     None ->
       ParseResult(
-        from: string.drop_left(parsing.from, 1),
+        from: string.drop_start(parsing.from, 1),
         result: parsing.result,
       )
   }
@@ -226,16 +226,16 @@ fn apply_code_block(
 ) -> ParseResult {
   let #(regex, block_formatter) = case delimiter {
     Backticks -> #(backtick_code_block_regex(), fn(quote) {
-      string.drop_left(quote, 1)
+      string.drop_start(quote, 1)
     })
     Spaces -> #(spaces_code_block_regex(), fn(quote) {
       quote
-      |> string.drop_left(5)
+      |> string.drop_start(5)
       |> string.replace("\n    ", "\n")
     })
   }
 
-  let style_applied = case regex.scan(with: regex, content: parsing.from) {
+  let style_applied = case regexp.scan(with: regex, content: parsing.from) {
     [Match(content: content, submatches: [Some(code_block)])] -> {
       let parsed_quote = block_formatter(code_block)
       let replace_target = case delimiter {
@@ -271,7 +271,7 @@ fn apply_code_block(
     }
     None ->
       ParseResult(
-        from: string.drop_left(parsing.from, 1),
+        from: string.drop_start(parsing.from, 1),
         result: parsing.result,
       )
   }
@@ -279,7 +279,7 @@ fn apply_code_block(
 
 fn apply_formatting(
   parsing: ParseResult,
-  regex: Regex,
+  regex: Regexp,
   style: fn(List(Option(String))) -> Option(String),
 ) -> ParseResult {
   let style_applied = replace(parsing.from, using: regex, by: style)
@@ -294,7 +294,7 @@ fn apply_formatting(
         |> result.unwrap("")
 
       ParseResult(
-        from: string.drop_left(parsing.from, 1),
+        from: string.drop_start(parsing.from, 1),
         result: parsing.result <> first_char,
       )
     }
@@ -303,10 +303,10 @@ fn apply_formatting(
 
 fn replace(
   text text: String,
-  using regex: Regex,
+  using regex: Regexp,
   by replacement: fn(List(Option(String))) -> Option(String),
 ) -> Option(String) {
-  case regex.scan(with: regex, content: text) {
+  case regexp.scan(with: regex, content: text) {
     [Match(content: matched, submatches: submatches)] -> {
       submatches
       |> replacement
@@ -316,43 +316,44 @@ fn replace(
   }
 }
 
-fn text_style_regex(delimiter: TextStyleDelimiter) -> Regex {
+fn text_style_regex(delimiter: TextStyleDelimiter) -> Regexp {
   let #(start, end) = case delimiter {
     Same(d) -> #(d, d)
     Different(d1, d2) -> #(d1, d2)
   }
 
-  let assert Ok(regex) = regex.from_string("^" <> start <> "(.*?)" <> end <> "")
+  let assert Ok(regex) =
+    regexp.from_string("^" <> start <> "(.*?)" <> end <> "")
 
   regex
 }
 
-fn link_regex() -> Regex {
-  let assert Ok(regex) = regex.from_string("^\\[(.*?)\\]\\((.*?)\\)")
+fn link_regex() -> Regexp {
+  let assert Ok(regex) = regexp.from_string("^\\[(.*?)\\]\\((.*?)\\)")
 
   regex
 }
 
-fn inline_code_regex() -> Regex {
-  let assert Ok(regex) = regex.from_string("^`(.*?)`")
+fn inline_code_regex() -> Regexp {
+  let assert Ok(regex) = regexp.from_string("^`(.*?)`")
 
   regex
 }
 
-fn quote_regex() -> Regex {
-  let assert Ok(regex) = regex.from_string("^(\n> [\\w\\W]*?)\n[^(> )]")
+fn quote_regex() -> Regexp {
+  let assert Ok(regex) = regexp.from_string("^(\n> [\\w\\W]*?)\n[^(> )]")
 
   regex
 }
 
-fn backtick_code_block_regex() -> Regex {
-  let assert Ok(regex) = regex.from_string("^\n```([\\w\\W]*?)\n```")
+fn backtick_code_block_regex() -> Regexp {
+  let assert Ok(regex) = regexp.from_string("^\n```([\\w\\W]*?)\n```")
 
   regex
 }
 
-fn spaces_code_block_regex() -> Regex {
-  let assert Ok(regex) = regex.from_string("^(\n    [\\w\\W]*?)\n[^(    )]")
+fn spaces_code_block_regex() -> Regexp {
+  let assert Ok(regex) = regexp.from_string("^(\n    [\\w\\W]*?)\n[^(    )]")
 
   regex
 }
