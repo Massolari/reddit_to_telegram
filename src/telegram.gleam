@@ -1,7 +1,7 @@
 import app_data.{type AppData}
-import gleam/dynamic
 import form_data
 import gleam/bit_array
+import gleam/dynamic
 import gleam/erlang/process
 import gleam/hackney
 import gleam/http
@@ -11,10 +11,11 @@ import gleam/io
 import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/pair
 import gleam/result
 import gleam/string
-import reddit/markdown
 import reddit
+import reddit/markdown
 
 type InputMedia {
   InputMedia(url: String, type_: InputMediaType)
@@ -36,7 +37,7 @@ pub fn send_messages(
   posts: List(reddit.Post),
   data: AppData,
   chat_id: String,
-) -> List(Result(String, String)) {
+) -> List(#(String, Option(String))) {
   use post, index <- list.index_map(posts)
 
   // Add a delay between each message to avoid rate limiting
@@ -45,7 +46,11 @@ pub fn send_messages(
     _ -> process.sleep(1000)
   }
 
-  send(post, data, chat_id)
+  case send(post, data, chat_id) {
+    Ok(_post_id) -> None
+    Error(error) -> Some(error)
+  }
+  |> pair.new(post.id, _)
 }
 
 fn send(

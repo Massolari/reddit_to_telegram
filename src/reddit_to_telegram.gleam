@@ -1,16 +1,15 @@
+import app_data.{type AppData}
+import bridge.{type Bridge}
+import database
+import gleam/int
 import gleam/io
 import gleam/list
-import gleam/result
+import gleam/option.{type Option, None, Some}
 import gleam/pair
-import gleam/string
-import gleam/int
+import gleam/result
 import reddit
-import telegram
-import bridge.{type Bridge}
-import app_data.{type AppData}
-import app_result.{type AppResult, AppError, AppOk, AppWarning}
-import database
 import sqlight
+import telegram
 
 pub fn main() {
   let result = {
@@ -25,19 +24,10 @@ pub fn main() {
   }
 
   case result {
-    Ok(warnings_errors) -> {
+    Ok(results) -> {
       io.println("Done!")
 
-      let #(warnings, errors) = app_result.partition(warnings_errors)
-
-      case warnings {
-        [] -> Nil
-        _ -> {
-          io.println("Warnings:")
-
-          list.each(warnings, io.println)
-        }
-      }
+      let #(_, errors) = result.partition(results)
 
       case errors {
         [] -> Nil
@@ -56,14 +46,14 @@ fn start(
   data: AppData,
   bridges: List(Bridge),
   database: sqlight.Connection,
-) -> List(AppResult(String)) {
+) -> List(Result(Nil, String)) {
   io.println("Starting...")
 
   use bridge <- list.map(bridges)
 
   io.println("Getting posts from subreddit " <> bridge.subreddit <> "...")
 
-  use posts <- app_result.try(
+  use posts <- result.map(
     reddit.get_posts(data, bridge.subreddit, bridge.reddit_sort)
     |> result.map_error(fn(error) {
       "Error getting posts for the subreddit "
@@ -84,33 +74,22 @@ fn start(
     |> filter_low_score(bridge.minimum_upvotes)
 
   io.println(
-    "Sending messages to telegram channel " <> bridge.telegram_channel <> "...",
+    "Sending "
+    <> int.to_string(list.length(filtered_posts))
+    <> " posts to telegram channel "
+    <> bridge.telegram_channel
+    <> "...",
   )
-  let #(inserted, errors) =
-    filtered_posts
-    |> telegram.send_messages(data, bridge.telegram_channel)
-    |> list.partition(with: result.is_ok)
-    |> pair.map_first(result.values)
-    |> pair.map_second(list.map(_, result.unwrap_error(_, "")))
+  let sent =
+    telegram.send_messages(filtered_posts, data, bridge.telegram_channel)
 
-  io.println(
-    inserted
-    |> list.length
-    |> int.to_string
-    <> " messages sent",
-  )
+  log_sent_messages(sent)
 
-  let _ = database.add_messages(database, inserted, bridge.telegram_channel)
+  let sent_ids = list.map(sent, pair.first)
 
-  let error_string = string.join(errors, "\n")
+  let _ = database.add_messages(database, sent_ids, bridge.telegram_channel)
 
-  case inserted, errors {
-    [], [_, ..] -> AppError(error_string)
-
-    _, [_, ..] -> AppWarning(error_string)
-
-    _, _ -> AppOk("")
-  }
+  Nil
 }
 
 pub fn filter_sent_posts(
@@ -125,4 +104,15 @@ pub fn filter_low_score(
   minimum: Int,
 ) -> List(reddit.Post) {
   list.filter(posts, fn(post) { post.score >= minimum })
+}
+
+fn log_sent_messages(sent: List(#(String, Option(String)))) {
+  use #(post_id, error) <- list.each(sent)
+
+  io.print("Sent message for post " <> post_id <> " ")
+
+  case error {
+    None -> io.println("successfully")
+    Some(error) -> io.println("with error: " <> error)
+  }
 }
