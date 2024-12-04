@@ -54,7 +54,7 @@ fn send(
   chat_id: String,
 ) -> Result(String, String) {
   case post.media {
-    [] -> send_text(post, post.id, data)
+    [] -> send_text(post, chat_id, data)
     [media] -> send_single_media(post, chat_id, data, media)
     multiple -> send_group_media(post, chat_id, data, multiple)
   }
