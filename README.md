@@ -72,8 +72,8 @@ Create the file `bridges.json` and fill in the values for the subreddits and cha
 [
   {
     "subreddit": "gleamlang",
-    "reddit_sort": "hot",
-    "telegram_channel": "@r_gleam"
+    "telegram_channel": "@r_gleam",
+    "reddit_sort": "hot"
   }
 ]
 ```
@@ -81,8 +81,8 @@ Create the file `bridges.json` and fill in the values for the subreddits and cha
 | Field | Description |
 | --- | --- |
 | `subreddit` | The subreddit to bridge in. It's the last part of the URL, for example, for the URL https://www.reddit.com/r/gleamlang the subreddit is `gleamlang` |
-| `reddit_sort` | The sorting method to use when fetching posts from Reddit. Available options are `hot`, `new`, `top` and `rising` |
 | `telegram_channel` | The Telegram channel to send the posts to. It's the channel username with the `@` prefix, for example, for the URL https://t.me/r_gleam the channel is `@r_gleam` |
+| `reddit_sort` | (Optional) The sorting method to use when fetching posts from Reddit. Available options are `hot`, `new`, `top` and `rising`. Default is `hot` |
 | `minimum_upvotes` | (Optional) The minimum number of upvotes a post must have to be sent to the channel. Default is `10` |
 | `flair_include` | (Optional) When defined, only posts with a flair that is in the list will be sent to the channel. Default is `[]` |
 | `flair_exclude` | (Optional) When defined, posts with a flair that is in the list will not be sent to the channel. Default is `[]` |
