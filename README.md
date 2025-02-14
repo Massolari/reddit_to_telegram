@@ -46,7 +46,10 @@ gleam run
 
 ## Setup
 
-1. Create a `.env` file and fill in the values (you can use `.env.example` as a template):
+### 1. Set the environment variables
+
+Create a `.env` file and fill in the values (you can use `.env.example` as a template):
+
 ```.env
 # Your Reddit username and password
 REDDIT_USERNAME=
@@ -61,7 +64,10 @@ REDDIT_CLIENT_SECRET=
 TELEGRAM_TOKEN=
 ```
 
-2. Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge (you can use `bridges.example.json` as a template):
+### 2. Define the bridges
+
+Create the file `bridges.json` and fill in the values for the subreddits and channels you want to bridge (you can use `bridges.example.json` as a template):
+
 ```json
 [
   {
@@ -80,4 +86,3 @@ TELEGRAM_TOKEN=
 | `minimum_upvotes` | (Optional) The minimum number of upvotes a post must have to be sent to the channel. Default is `10` |
 | `flair_include` | (Optional) When defined, only posts with a flair that is in the list will be sent to the channel. Default is `[]` |
 | `flair_exclude` | (Optional) When defined, posts with a flair that is in the list will not be sent to the channel. Default is `[]` |
-
