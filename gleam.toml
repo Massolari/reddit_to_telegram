@@ -18,7 +18,7 @@ simplifile = "~> 1.1"
 gleam_erlang = "~> 0.24"
 gleam_json = ">= 2.3.0 and < 3.0.0"
 dot_env = "~> 0.4"
-sqlight = "~> 0.9"
+sqlight = ">= 1.0.1 and < 2.0.0"
 shellout = "~> 1.5"
 gleam_regexp = ">= 1.0.0 and < 2.0.0"
 
