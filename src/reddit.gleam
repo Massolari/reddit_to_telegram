@@ -3,7 +3,7 @@ import gleam/bit_array
 import gleam/bool
 import gleam/bytes_tree
 import gleam/dict
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/hackney
 import gleam/http
 import gleam/http/request.{type Request}
@@ -23,6 +23,7 @@ pub type Post {
     score: Int,
     media: List(Media),
     external_url: Result(String, Nil),
+    link_flair_text: String,
   )
 }
 
@@ -82,10 +83,8 @@ fn get_token(data: AppData) -> Result(String, String) {
   |> hackney.send
   |> result.map_error(fn(_) { "Error getting the token" })
   |> result.try(fn(response) {
-    json.decode(
-      from: response.body,
-      using: dynamic.field(named: "access_token", of: dynamic.string),
-    )
+    response.body
+    |> json.parse(decode.at(["access_token"], decode.string))
     |> result.map_error(fn(_) {
       io.debug(response)
       "Error decoding the token"
@@ -131,7 +130,8 @@ fn get_threads(
   |> hackney.send
   |> result.map_error(fn(_) { "Error getting the threads" })
   |> result.try(fn(response) {
-    json.decode(from: response.body, using: posts_decoder())
+    response.body
+    |> json.parse(posts_decoder())
     |> result.map_error(fn(_) {
       io.debug(response)
       "Error decoding posts"
@@ -139,155 +139,148 @@ fn get_threads(
   })
 }
 
-fn posts_decoder() -> dynamic.Decoder(List(Post)) {
-  dynamic.field(
-    named: "data",
-    of: dynamic.field(
-      named: "children",
-      of: dynamic.list(of: dynamic.field("data", post_decoder())),
-    ),
+fn posts_decoder() -> decode.Decoder(List(Post)) {
+  decode.at(
+    ["data", "children"],
+    decode.list(decode.at(["data"], post_decoder())),
   )
 }
 
-fn post_decoder() -> dynamic.Decoder(Post) {
-  dynamic.decode6(
-    Post,
-    dynamic.field(named: "id", of: dynamic.string),
-    dynamic.field(named: "title", of: dynamic.string),
-    text_decoder(),
-    dynamic.field(named: "score", of: dynamic.int),
-    media_decoder(),
-    external_url_decoder(),
+fn post_decoder() -> decode.Decoder(Post) {
+  use id <- decode.field("id", decode.string)
+  use title <- decode.field("title", decode.string)
+  use text <- decode.field("selftext", text_decoder())
+  use score <- decode.field("score", decode.int)
+  use media <- media_decoder()
+  use external_url <- external_url_decoder()
+  use link_flair_text <- decode.field("link_flair_text", decode.string)
+  decode.success(Post(
+    id:,
+    title:,
+    text:,
+    score:,
+    media:,
+    external_url:,
+    link_flair_text:,
+  ))
+}
+
+fn text_decoder() -> decode.Decoder(String) {
+  decode.string
+  |> decode.map(fn(text) {
+    text
+    |> string.replace("&amp;", "")
+    |> string.replace("#x200B;\n\n", "")
+    |> string.replace("#x200B;\n", "")
+    |> string.replace("#x200B;", "")
+  })
+}
+
+fn media_decoder(
+  next: fn(List(Media)) -> decode.Decoder(final),
+) -> decode.Decoder(final) {
+  decode.one_of(
+    is_video_decoder()
+      |> decode.map(list.prepend([], _)),
+    [
+      url_decoder()
+        |> decode.map(list.prepend([], _)),
+      media_metadata_decoder(),
+      decode.success([]),
+    ],
   )
+  |> decode.then(next)
 }
 
-fn text_decoder() -> dynamic.Decoder(String) {
-  dynamic.field(named: "selftext", of: fn(dynamic) {
-    dynamic.string(dynamic)
-    |> result.map(fn(text) {
-      text
-      |> string.replace("&amp;", "")
-      |> string.replace("#x200B;\n\n", "")
-      |> string.replace("#x200B;\n", "")
-      |> string.replace("#x200B;", "")
-    })
-  })
-}
+fn is_video_decoder() -> decode.Decoder(Media) {
+  use is_video <- decode.field("is_video", decode.bool)
 
-fn media_decoder() -> dynamic.Decoder(List(Media)) {
-  dynamic.any([
-    fn(dynamic) {
-      is_video_decoder(dynamic)
-      |> result.map(list.prepend([], _))
-    },
-    fn(dynamic) {
-      url_decoder()(dynamic)
-      |> result.map(list.prepend([], _))
-    },
-    fn(dynamic) { media_metadata_decoder()(dynamic) },
-    fn(_) { Ok([]) },
-  ])
-}
+  case is_video {
+    True -> {
+      use fallback_url <- decode.subfield(
+        ["media", "reddit_video", "fallback_url"],
+        decode.string,
+      )
+      use is_gif <- decode.subfield(
+        ["media", "reddit_video", "is_gif"],
+        decode.bool,
+      )
 
-fn is_video_decoder(
-  json: dynamic.Dynamic,
-) -> Result(Media, List(dynamic.DecodeError)) {
-  dynamic.field(named: "is_video", of: fn(dynamic_is_video) {
-    dynamic.bool(dynamic_is_video)
-    |> result.try(fn(is_video) {
-      case is_video {
-        True -> {
-          dynamic.field(
-            named: "media",
-            of: dynamic.field(
-              named: "reddit_video",
-              of: dynamic.decode2(
-                fn(url: String, is_gif: Bool) {
-                  case is_gif {
-                    True -> Media(url, Gif)
-                    False -> Media(url, Video)
-                  }
-                },
-                dynamic.field(named: "fallback_url", of: dynamic.string),
-                dynamic.field(named: "is_gif", of: dynamic.bool),
-              ),
-            ),
-          )(json)
-        }
-        False -> Error([])
-      }
-    })
-  })(json)
-}
-
-fn url_decoder() -> dynamic.Decoder(Media) {
-  dynamic.field(named: "url", of: fn(dynamic_url) {
-    dynamic.string(dynamic_url)
-    |> result.try(media_from_url)
-  })
-}
-
-fn media_metadata_decoder() -> dynamic.Decoder(List(Media)) {
-  dynamic.field(named: "media_metadata", of: fn(dynamic_media_metadata) {
-    use dict_dynamic <- result.try(
-      dynamic_media_metadata
-      |> dynamic.dict(of: dynamic.string, to: dynamic.dynamic)
-      |> result.map(dict.values),
-    )
-
-    use acc, dynamic <- list.try_fold(dict_dynamic, [])
-
-    dynamic
-    |> metadata_decoder()
-    |> result.map_error(fn(_) { [] })
-    |> result.map(fn(media) { list.prepend(acc, media) })
-  })
-}
-
-fn metadata_decoder() -> dynamic.Decoder(Media) {
-  fn(dynamic_metadata) {
-    dynamic.field(named: "e", of: fn(dynamic_e) {
-      dynamic.string(dynamic_e)
-      |> result.try(fn(e) {
-        case e {
-          "Image" -> {
-            dynamic.field(
-              named: "s",
-              of: dynamic.field(named: "u", of: fn(dynamic_url) {
-                dynamic.string(dynamic_url)
-                |> result.map(fn(url) {
-                  case url {
-                    "https://preview.redd.it/" <> path ->
-                      Media("https://i.redd.it/" <> path, Image)
-                    _ -> Media(url, Image)
-                  }
-                })
-              }),
-            )(dynamic_metadata)
-          }
-          "AnimatedImage" -> {
-            dynamic.field(
-              named: "s",
-              of: dynamic.field(named: "gif", of: fn(dynamic_url) {
-                dynamic.string(dynamic_url)
-                |> result.map(fn(url) { Media(url, Gif) })
-              }),
-            )(dynamic_metadata)
-          }
-          _ -> {
-            io.println("Unknown media type: " <> e)
-            Error([])
-          }
-        }
-      })
-    })(dynamic_metadata)
+      decode.success(
+        Media(fallback_url, case is_gif {
+          True -> Gif
+          False -> Video
+        }),
+      )
+    }
+    False -> decode.failure(Media("", Video), "Error decoding is_video")
   }
 }
 
-fn media_from_url(url: String) -> Result(Media, dynamic.DecodeErrors) {
-  use <- bool.guard(when: is_url_image(url), return: Ok(Media(url, Image)))
-  use <- bool.guard(when: is_url_gif(url), return: Ok(Media(url, Gif)))
-  Error([])
+fn url_decoder() -> decode.Decoder(Media) {
+  use url <- decode.field("url", decode.string)
+
+  media_from_url(url)
+}
+
+fn media_metadata_decoder() -> decode.Decoder(List(Media)) {
+  use dict_dynamic <- decode.optional_field(
+    "media_metadata",
+    [],
+    decode.dict(decode.string, decode.dynamic) |> decode.map(dict.values),
+  )
+
+  dict_dynamic
+  |> list.fold([], fn(acc, dynamic) {
+    dynamic
+    |> decode.run(metadata_decoder())
+    |> result.map(fn(media) { list.prepend(acc, media) })
+    |> result.unwrap(acc)
+  })
+  |> decode.success
+}
+
+fn metadata_decoder() -> decode.Decoder(Media) {
+  use e <- decode.field("e", decode.string)
+
+  case e {
+    "Image" -> {
+      decode.at(
+        ["s", "u"],
+        decode.string
+          |> decode.map(fn(url) {
+            case url {
+              "https://preview.redd.it/" <> path ->
+                Media("https://i.redd.it/" <> path, Image)
+              _ -> Media(url, Image)
+            }
+          }),
+      )
+    }
+    "AnimatedImage" -> {
+      decode.at(
+        ["s", "gif"],
+        decode.string
+          |> decode.map(fn(url) { Media(url, Gif) }),
+      )
+    }
+    _ -> {
+      io.println("Unknown media type: " <> e)
+      decode.failure(Media("", Image), "Unknown media type")
+    }
+  }
+}
+
+fn media_from_url(url: String) -> decode.Decoder(Media) {
+  use <- bool.guard(
+    when: is_url_image(url),
+    return: decode.success(Media(url, Image)),
+  )
+  use <- bool.guard(
+    when: is_url_gif(url),
+    return: decode.success(Media(url, Gif)),
+  )
+  decode.failure(Media(url, Image), "Error decoding media from url")
 }
 
 fn is_url_image(url: String) -> Bool {
@@ -300,28 +293,22 @@ fn is_url_gif(url: String) -> Bool {
   string.ends_with(url, ".gif") || string.ends_with(url, ".gifv")
 }
 
-fn external_url_decoder() -> dynamic.Decoder(Result(String, Nil)) {
-  fn(json) {
-    dynamic.field(named: "is_self", of: fn(dynamic_is_self) {
-      dynamic.bool(dynamic_is_self)
-      |> result.try(fn(is_self) {
-        case is_self {
-          True -> Ok(Error(Nil))
-          False -> {
-            dynamic.field(named: "url", of: fn(dynamic_url) {
-              dynamic.string(dynamic_url)
-              |> result.map(fn(url) {
-                case string.contains(url, "reddit") {
-                  True -> Error(Nil)
-                  _ -> Ok(url)
-                }
-              })
-            })(json)
-          }
-        }
-      })
-    })(json)
+fn external_url_decoder(
+  next: fn(Result(String, Nil)) -> decode.Decoder(final),
+) -> decode.Decoder(final) {
+  use is_self <- decode.field("is_self", decode.bool)
+
+  case is_self {
+    True -> decode.success(Error(Nil))
+    False -> {
+      use url <- decode.field("url", decode.string)
+      case string.contains(url, "reddit") {
+        True -> decode.failure(Error(Nil), "Error decoding external url")
+        False -> decode.success(Ok(url))
+      }
+    }
   }
+  |> decode.then(next)
 }
 
 pub fn get_video(url: String) -> Result(String, String) {

@@ -1,8 +1,8 @@
-import gleeunit
 import gleam/list
+import gleeunit
 import gleeunit/should
-import reddit_to_telegram
 import reddit
+import reddit_to_telegram
 
 const test_posts = [
   reddit.Post(
@@ -12,6 +12,7 @@ const test_posts = [
     score: 10,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "foo",
   ),
   reddit.Post(
     id: "2",
@@ -20,6 +21,7 @@ const test_posts = [
     score: 20,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "bar",
   ),
   reddit.Post(
     id: "3",
@@ -28,6 +30,7 @@ const test_posts = [
     score: 30,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "foo",
   ),
   reddit.Post(
     id: "4",
@@ -36,6 +39,7 @@ const test_posts = [
     score: 40,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "bar",
   ),
   reddit.Post(
     id: "5",
@@ -44,6 +48,7 @@ const test_posts = [
     score: 50,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "foo",
   ),
   reddit.Post(
     id: "6",
@@ -52,6 +57,7 @@ const test_posts = [
     score: 60,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "bar",
   ),
   reddit.Post(
     id: "7",
@@ -60,6 +66,7 @@ const test_posts = [
     score: 70,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "foo",
   ),
   reddit.Post(
     id: "8",
@@ -68,6 +75,7 @@ const test_posts = [
     score: 80,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "bar",
   ),
   reddit.Post(
     id: "9",
@@ -76,6 +84,7 @@ const test_posts = [
     score: 90,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "foo",
   ),
   reddit.Post(
     id: "10",
@@ -84,6 +93,7 @@ const test_posts = [
     score: 100,
     media: [],
     external_url: Error(Nil),
+    link_flair_text: "bar",
   ),
 ]
 

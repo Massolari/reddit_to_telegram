@@ -1,5 +1,5 @@
-import reddit.{Post}
 import gleeunit/should
+import reddit.{Post}
 
 const post = Post(
   id: "a",
@@ -8,6 +8,7 @@ const post = Post(
   score: 10,
   media: [],
   external_url: Error(Nil),
+  link_flair_text: "foo",
 )
 
 pub fn short_link_test() {

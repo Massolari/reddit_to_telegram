@@ -1,6 +1,6 @@
 name = "reddit_to_telegram"
 version = "1.0.0"
-gleam = ">= 0.32.0"
+gleam = ">= 1.4.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
@@ -11,12 +11,12 @@ gleam = ">= 0.32.0"
 # links = [{ title = "Website", href = "https://gleam.run" }]
 
 [dependencies]
-gleam_stdlib = ">= 0.45.0 and < 1.0.0"
+gleam_stdlib = ">= 0.54.0 and < 1.0.0"
 gleam_http = "~> 3.5"
 gleam_hackney = "~> 1.2"
 simplifile = "~> 1.1"
 gleam_erlang = "~> 0.24"
-gleam_json = "~> 0.7"
+gleam_json = ">= 2.3.0 and < 3.0.0"
 dot_env = "~> 0.4"
 sqlight = "~> 0.9"
 shellout = "~> 1.5"

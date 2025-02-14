@@ -1,9 +1,9 @@
-import sqlight.{type Connection}
-import gleam/dynamic
-import gleam/result
-import gleam/list
+import gleam/dynamic/decode
 import gleam/io
+import gleam/list
+import gleam/result
 import gleam/string
+import sqlight.{type Connection}
 
 pub fn connect() {
   use connection <- result.map(
@@ -38,7 +38,7 @@ pub fn get_messages(
     "SELECT thread_id FROM sent_messages WHERE chat_id = ?",
     on: connection,
     with: [sqlight.text(chat_id)],
-    expecting: dynamic.element(0, dynamic.string),
+    expecting: decode.at([0], decode.string),
   )
 }
 
@@ -51,7 +51,7 @@ pub fn add_message(
     "INSERT INTO sent_messages (thread_id, chat_id) VALUES (?, ?)",
     on: connection,
     with: [sqlight.text(thread_id), sqlight.text(chat_id)],
-    expecting: fn(_) { Ok(Nil) },
+    expecting: decode.success(Nil),
   )
 }
 
@@ -75,6 +75,6 @@ pub fn add_messages(
     with: list.flat_map(thread_ids, fn(id) {
       [sqlight.text(id), sqlight.text(chat_id)]
     }),
-    expecting: fn(_) { Ok(Nil) },
+    expecting: decode.success(Nil),
   )
 }

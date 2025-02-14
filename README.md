@@ -78,4 +78,6 @@ TELEGRAM_TOKEN=
 | `reddit_sort` | The sorting method to use when fetching posts from Reddit. Available options are `hot`, `new`, `top` and `rising` |
 | `telegram_channel` | The Telegram channel to send the posts to. It's the channel username with the `@` prefix, for example, for the URL https://t.me/r_gleam the channel is `@r_gleam` |
 | `minimum_upvotes` | (Optional) The minimum number of upvotes a post must have to be sent to the channel. Default is `10` |
+| `flair_include` | (Optional) When defined, only posts with a flair that is in the list will be sent to the channel. Default is `[]` |
+| `flair_exclude` | (Optional) When defined, posts with a flair that is in the list will not be sent to the channel. Default is `[]` |
 

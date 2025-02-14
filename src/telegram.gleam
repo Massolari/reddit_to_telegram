@@ -1,7 +1,7 @@
 import app_data.{type AppData}
 import form_data
 import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/hackney
 import gleam/http
@@ -184,7 +184,7 @@ fn send_json(
     |> hackney.send
     |> result.map_error(fn(e) {
       io.debug(e)
-      "Error sending JSON request"
+      "Error sending JSON request: " <> json.to_string(body)
     }),
   )
 
@@ -193,7 +193,7 @@ fn send_json(
     429 -> {
       let retry_after =
         response.body
-        |> json.decode(retry_after_decoder())
+        |> json.parse(retry_after_decoder())
         |> result.unwrap(60)
 
       io.println(
@@ -326,6 +326,11 @@ fn text_encode(post: reddit.Post, chat_id: String) -> List(Json) {
     Error(_) -> ""
   }
 
+  let flair = case post.link_flair_text {
+    "" -> ""
+    flair -> "\n<i>(" <> flair <> ")</i>"
+  }
+
   let post_text = case post.text {
     "" -> ""
     _ -> "\n\n" <> post.text
@@ -334,6 +339,7 @@ fn text_encode(post: reddit.Post, chat_id: String) -> List(Json) {
   let text =
     post.title
     <> external_url
+    <> flair
     <> markdown.reddit_to_telegram(post_text)
     <> "\n\n"
     <> reddit.short_link(post)
@@ -380,6 +386,6 @@ fn input_media_encode(input_media: InputMedia) -> Json {
   ])
 }
 
-fn retry_after_decoder() -> dynamic.Decoder(Int) {
-  dynamic.field("parameters", dynamic.field("retry_after", dynamic.int))
+fn retry_after_decoder() -> decode.Decoder(Int) {
+  decode.at(["parameters", "retry_after"], decode.int)
 }

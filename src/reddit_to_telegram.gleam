@@ -72,6 +72,7 @@ fn start(
     posts
     |> filter_sent_posts(sent_messages)
     |> filter_low_score(bridge.minimum_upvotes)
+    |> filter_flair(bridge.flair_include, bridge.flair_exclude)
 
   io.println(
     "Sending "
@@ -104,6 +105,21 @@ pub fn filter_low_score(
   minimum: Int,
 ) -> List(reddit.Post) {
   list.filter(posts, fn(post) { post.score >= minimum })
+}
+
+pub fn filter_flair(
+  posts: List(reddit.Post),
+  include: List(String),
+  exclude: List(String),
+) -> List(reddit.Post) {
+  let include_filter = case include {
+    [] -> fn(_post) { True }
+    _ -> fn(post: reddit.Post) { list.contains(include, post.link_flair_text) }
+  }
+
+  list.filter(posts, fn(post) {
+    include_filter(post) && !list.contains(exclude, post.link_flair_text)
+  })
 }
 
 fn log_sent_messages(sent: List(#(String, Option(String)))) {
