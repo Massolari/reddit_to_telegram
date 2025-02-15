@@ -327,8 +327,8 @@ fn text_encode(post: reddit.Post, chat_id: String) -> List(Json) {
   }
 
   let flair = case post.link_flair_text {
-    "" -> ""
-    flair -> "\n<i>(" <> flair <> ")</i>"
+    Some(flair) -> "\n<i>(" <> flair <> ")</i>"
+    None -> ""
   }
 
   let post_text = case post.text {

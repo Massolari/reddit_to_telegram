@@ -10,6 +10,7 @@ import gleam/http/request.{type Request}
 import gleam/io
 import gleam/json
 import gleam/list
+import gleam/option.{type Option}
 import gleam/result
 import gleam/string
 import shellout
@@ -23,7 +24,7 @@ pub type Post {
     score: Int,
     media: List(Media),
     external_url: Result(String, Nil),
-    link_flair_text: String,
+    link_flair_text: Option(String),
   )
 }
 
@@ -132,10 +133,7 @@ fn get_threads(
   |> result.try(fn(response) {
     response.body
     |> json.parse(posts_decoder())
-    |> result.map_error(fn(_) {
-      io.debug(response)
-      "Error decoding posts"
-    })
+    |> result.map_error(fn(e) { "Error decoding posts: " <> string.inspect(e) })
   })
 }
 
@@ -153,7 +151,10 @@ fn post_decoder() -> decode.Decoder(Post) {
   use score <- decode.field("score", decode.int)
   use media <- media_decoder()
   use external_url <- external_url_decoder()
-  use link_flair_text <- decode.field("link_flair_text", decode.string)
+  use link_flair_text <- decode.field(
+    "link_flair_text",
+    decode.optional(decode.string),
+  )
   decode.success(Post(
     id:,
     title:,

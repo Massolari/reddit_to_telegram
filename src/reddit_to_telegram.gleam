@@ -113,12 +113,15 @@ pub fn filter_flair(
   exclude: List(String),
 ) -> List(reddit.Post) {
   let include_filter = case include {
-    [] -> fn(_post) { True }
-    _ -> fn(post: reddit.Post) { list.contains(include, post.link_flair_text) }
+    [] -> fn(_flair) { True }
+    _ -> fn(flair: String) { list.contains(include, flair) }
   }
 
   list.filter(posts, fn(post) {
-    include_filter(post) && !list.contains(exclude, post.link_flair_text)
+    case post.link_flair_text {
+      Some(flair) -> include_filter(flair) && !list.contains(exclude, flair)
+      None -> True
+    }
   })
 }
 

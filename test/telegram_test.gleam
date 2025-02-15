@@ -1,3 +1,4 @@
+import gleam/option.{None}
 import gleeunit/should
 import reddit
 import telegram
@@ -9,7 +10,7 @@ const reddit_post = reddit.Post(
   score: 10,
   media: [],
   external_url: Error(Nil),
-  link_flair_text: "foo",
+  link_flair_text: None,
 )
 
 pub fn media_caption_test() {
