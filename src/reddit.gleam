@@ -10,7 +10,7 @@ import gleam/http/request.{type Request}
 import gleam/io
 import gleam/json
 import gleam/list
-import gleam/option.{type Option}
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import shellout
@@ -23,7 +23,7 @@ pub type Post {
     text: String,
     score: Int,
     media: List(Media),
-    external_url: Result(String, Nil),
+    external_url: Option(String),
     link_flair_text: Option(String),
   )
 }
@@ -296,17 +296,17 @@ fn is_url_gif(url: String) -> Bool {
 }
 
 fn external_url_decoder(
-  next: fn(Result(String, Nil)) -> decode.Decoder(final),
+  next: fn(Option(String)) -> decode.Decoder(final),
 ) -> decode.Decoder(final) {
   use is_self <- decode.field("is_self", decode.bool)
 
   case is_self {
-    True -> decode.success(Error(Nil))
+    True -> decode.success(None)
     False -> {
       use url <- decode.field("url", decode.string)
       case string.contains(url, "reddit") {
-        True -> decode.failure(Error(Nil), "Error decoding external url")
-        False -> decode.success(Ok(url))
+        True -> decode.failure(None, "Error decoding external url")
+        False -> decode.success(Some(url))
       }
     }
   }

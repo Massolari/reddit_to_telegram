@@ -12,7 +12,7 @@ const post = Post(
   text: "bar",
   score: 10,
   media: [],
-  external_url: Error(Nil),
+  external_url: None,
   link_flair_text: None,
 )
 

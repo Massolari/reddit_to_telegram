@@ -322,8 +322,8 @@ fn animation_encode(url: String, post: Option(reddit.Post), chat_id: String) {
 
 fn text_encode(post: reddit.Post, chat_id: String) -> List(Json) {
   let external_url = case post.external_url {
-    Ok(url) -> "\n" <> url
-    Error(_) -> ""
+    Some(url) -> "\n" <> url
+    None -> ""
   }
 
   let flair = case post.link_flair_text {
