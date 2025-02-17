@@ -137,7 +137,8 @@ fn get_threads(
   })
 }
 
-fn posts_decoder() -> decode.Decoder(List(Post)) {
+@internal
+pub fn posts_decoder() -> decode.Decoder(List(Post)) {
   decode.at(
     ["data", "children"],
     decode.list(decode.at(["data"], post_decoder())),

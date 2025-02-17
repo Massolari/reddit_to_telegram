@@ -1,0 +1,7 @@
+---
+version: 1.2.6
+title: Posts decoder
+file: ./test/reddit_test.gleam
+test_name: posts_decoder_test
+---
+[Post("1ircbgt", "Handy Toolbox using Snacks (custom picker)", "I made a simple and handy toolbox kinda picker using Snacks picker. I understand these can be mapped to a key but I find myself that some are not crucial to have a keymap for itself. So coming from IntelliJ IDE I thought why not have a custom picker where not so important (but less frequently used) actions are shown. Drop your thoughts\n\nhttps://reddit.com/link/1ircbgt/video/5cn9gx17umje1/player\n\nToolbox Implementation -&gt; [here](https://github.com/mslalith/dotfiles/blob/9279acb63f63a0a8b011c949b7c9c6c5bdc55dc3/roles/neovim/files/lua/ms/snacks/toolbox/init.lua)\n\ndotfiles -&gt; [here](https://github.com/mslalith/dotfiles)", 2, [], Error(Nil), Some("Tips and Tricks")), Post("1iqsstl", "Who’s using it in production?", "Just curious, if there are companies with gleam handling their business?", 19, [], Error(Nil), None), Post("1irbjwt", "finallyFoundAJobICanApplyTo", "", 152, [Media("https://i.redd.it/9lam0zqvmmje1.jpeg", Image)], Ok("https://i.redd.it/9lam0zqvmmje1.jpeg"), Some("Other")), Post("1irf3wv", "\"I once broke the spirit of a flasher...\"", "", 0, [Media("https://v.redd.it/9iq52wp3snje1/DASH_720.mp4?source=fallback", Video)], Ok("https://v.redd.it/9iq52wp3snje1"), Some("TV/Movie Clip"))]

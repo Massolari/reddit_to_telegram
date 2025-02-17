@@ -1,5 +1,5 @@
-import dot_env
-import dot_env/env
+import dotenv_gleam
+import envoy
 import gleam/result
 
 pub type AppData {
@@ -13,7 +13,7 @@ pub type AppData {
 }
 
 pub fn get() -> Result(AppData, String) {
-  dot_env.load()
+  dotenv_gleam.config()
 
   use username <- result.try(get_env("REDDIT_USERNAME"))
   use password <- result.try(get_env("REDDIT_PASSWORD"))
@@ -32,6 +32,6 @@ pub fn get() -> Result(AppData, String) {
 
 fn get_env(key: String) -> Result(String, String) {
   key
-  |> env.get
+  |> envoy.get
   |> result.map_error(fn(_) { "Missing " <> key <> " environment variable" })
 }
