@@ -24,11 +24,8 @@ pub fn short_link_test() {
 
 pub fn posts_decoder_test() {
   let assert Ok(json) = simplifile.read("./test/sample.json")
-  let assert Ok(posts) =
-    json
-    |> json.parse(reddit.posts_decoder())
-
-  posts
+  json
+  |> json.parse(reddit.posts_decoder())
   |> string.inspect
   |> birdie.snap(title: "Posts decoder")
 }
