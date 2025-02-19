@@ -7,18 +7,27 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/pair
 import gleam/result
+import gleam/string
 import reddit
 import sqlight
 import telegram
 
+type Error {
+  AppDataError(app_data.Error)
+  BridgeError(bridge.Error)
+  DatabaseError(database.Error)
+}
+
 pub fn main() {
   let result = {
     io.println("Loading app data...")
-    use app_data <- result.try(app_data.get())
+    use app_data <- result.try(app_data.get() |> result.map_error(AppDataError))
     io.println("Loading bridges...")
-    use bridges <- result.try(bridge.get())
+    use bridges <- result.try(bridge.get() |> result.map_error(BridgeError))
     io.println("Connecting to database...")
-    use database <- result.map(database.connect())
+    use database <- result.map(
+      database.connect() |> result.map_error(DatabaseError),
+    )
 
     start(app_data, bridges, database)
   }
@@ -38,7 +47,10 @@ pub fn main() {
         }
       }
     }
-    Error(error) -> io.println("Error: " <> error)
+    Error(error) ->
+      error
+      |> string.inspect
+      |> io.println
   }
 }
 

@@ -5,10 +5,14 @@ import gleam/result
 import gleam/string
 import sqlight.{type Connection}
 
-pub fn connect() {
+pub type Error {
+  OpenError(sqlight.Error)
+}
+
+pub fn connect() -> Result(Connection, Error) {
   use connection <- result.map(
     sqlight.open("file:./db/data.sqlite3")
-    |> result.map_error(fn(error) { error.message }),
+    |> result.map_error(fn(error) { OpenError(error) }),
   )
 
   let _ = setup(connection)

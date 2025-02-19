@@ -1,7 +1,6 @@
 import gleam/dynamic/decode
 import gleam/json
 import gleam/result
-import gleam/string
 import reddit
 import simplifile
 
@@ -16,17 +15,22 @@ pub type Bridge {
   )
 }
 
-pub fn get() -> Result(List(Bridge), String) {
+pub type Error {
+  ReadFileError(simplifile.FileError)
+  DecodeError(json.DecodeError)
+}
+
+pub fn get() -> Result(List(Bridge), Error) {
   simplifile.read("./bridges.json")
-  |> result.map_error(fn(_) { "File bridges.json not found" })
+  |> result.map_error(fn(error) { ReadFileError(error) })
   |> result.try(bridges_decoder)
 }
 
-fn bridges_decoder(json_bridges: String) -> Result(List(Bridge), String) {
+fn bridges_decoder(json_bridges: String) -> Result(List(Bridge), Error) {
   bridge_decoder()
   |> decode.list
   |> json.parse(json_bridges, _)
-  |> result.map_error(fn(e) { "Couldn't decode bridges: " <> string.inspect(e) })
+  |> result.map_error(fn(e) { DecodeError(e) })
 }
 
 fn bridge_decoder() -> decode.Decoder(Bridge) {

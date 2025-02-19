@@ -12,7 +12,11 @@ pub type AppData {
   )
 }
 
-pub fn get() -> Result(AppData, String) {
+pub type Error {
+  MissingEnvVar(String)
+}
+
+pub fn get() -> Result(AppData, Error) {
   dotenv_gleam.config()
 
   use username <- result.try(get_env("REDDIT_USERNAME"))
@@ -30,8 +34,8 @@ pub fn get() -> Result(AppData, String) {
   )
 }
 
-fn get_env(key: String) -> Result(String, String) {
+fn get_env(key: String) -> Result(String, Error) {
   key
   |> envoy.get
-  |> result.map_error(fn(_) { "Missing " <> key <> " environment variable" })
+  |> result.map_error(fn(_) { MissingEnvVar(key) })
 }
