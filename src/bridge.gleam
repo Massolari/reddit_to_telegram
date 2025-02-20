@@ -21,19 +21,23 @@ pub type Error {
 }
 
 pub fn get() -> Result(List(Bridge), Error) {
-  simplifile.read("./bridges.json")
-  |> result.map_error(fn(error) { ReadFileError(error) })
-  |> result.try(bridges_decoder)
-}
+  use file <- result.try(
+    simplifile.read("./bridges.json")
+    |> result.map_error(fn(error) { ReadFileError(error) }),
+  )
 
-fn bridges_decoder(json_bridges: String) -> Result(List(Bridge), Error) {
-  bridge_decoder()
-  |> decode.list
-  |> json.parse(json_bridges, _)
+  file
+  |> json.parse(bridges_decoder())
   |> result.map_error(fn(e) { DecodeError(e) })
 }
 
-fn bridge_decoder() -> decode.Decoder(Bridge) {
+@internal
+pub fn bridges_decoder() -> decode.Decoder(List(Bridge)) {
+  decode.list(bridge_decoder())
+}
+
+@internal
+pub fn bridge_decoder() -> decode.Decoder(Bridge) {
   use subreddit <- decode.field("subreddit", decode.string)
   use reddit_sort <- decode.optional_field(
     "reddit_sort",

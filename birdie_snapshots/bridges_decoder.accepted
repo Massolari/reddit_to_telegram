@@ -1,0 +1,7 @@
+---
+version: 1.2.6
+title: Bridges decoder
+file: ./test/bridge_test.gleam
+test_name: bridges_decoder_test
+---
+Ok([Bridge("programming", Hot, "@programming_news", 1000, ["Discussion", "Tutorial"], ["Recruitment"]), Bridge("science", Top, "@daily_science", 10, ["Physics", "Biology", "Chemistry"], []), Bridge("memes", Hot, "@fresh_memes", 100, [], ["Repost"])])

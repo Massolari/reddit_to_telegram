@@ -23,7 +23,7 @@ pub fn short_link_test() {
 }
 
 pub fn posts_decoder_test() {
-  let assert Ok(json) = simplifile.read("./test/sample.json")
+  let assert Ok(json) = simplifile.read("./test/sample_reddit_threads.json")
   json
   |> json.parse(reddit.posts_decoder())
   |> string.inspect

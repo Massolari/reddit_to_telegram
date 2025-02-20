@@ -1,0 +1,22 @@
+[
+  {
+    "subreddit": "programming",
+    "reddit_sort": "hot",
+    "telegram_channel": "@programming_news",
+    "minimum_upvotes": 1000,
+    "flair_include": ["Discussion", "Tutorial"],
+    "flair_exclude": ["Recruitment"]
+  },
+  {
+    "subreddit": "science",
+    "reddit_sort": "top",
+    "telegram_channel": "@daily_science",
+    "flair_include": ["Physics", "Biology", "Chemistry"]
+  },
+  {
+    "subreddit": "memes",
+    "telegram_channel": "@fresh_memes",
+    "minimum_upvotes": 100,
+    "flair_exclude": ["Repost"]
+  }
+]
