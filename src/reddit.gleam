@@ -305,7 +305,7 @@ fn external_url_decoder(
     False -> {
       use url <- decode.field("url", decode.string)
       case string.contains(url, "reddit") {
-        True -> decode.failure(None, "Error decoding external url")
+        True -> decode.success(None)
         False -> decode.success(Some(url))
       }
     }
