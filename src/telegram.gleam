@@ -100,7 +100,7 @@ fn send_group_media(
   // Telegram's limit is 10 media per message
   |> list.sized_chunk(10)
   |> list.map(send_media_chunk(_, post, chat_id, data))
-  |> list.filter(result.is_error(_))
+  |> list.filter(result.is_error)
   |> list.map(result.unwrap_error(_, ""))
   |> fn(errors) {
     case errors {
@@ -182,10 +182,9 @@ fn send_json(
     |> request.set_body(json.to_string(body))
     |> request.set_header("Content-Type", "application/json")
     |> hackney.send
-    |> result.map_error(fn(e) {
-      io.debug(e)
-      "Error sending JSON request: " <> json.to_string(body)
-    }),
+    |> result.replace_error(
+      "Error sending JSON request: " <> json.to_string(body),
+    ),
   )
 
   case response.status {
@@ -240,10 +239,7 @@ fn send_video(
       "multipart/form-data; boundary=" <> form.boundary,
     )
     |> hackney.send_bits
-    |> result.map_error(fn(e) {
-      io.debug(e)
-      "Error sending video"
-    }),
+    |> result.replace_error("Error sending video"),
   )
 
   case response.status {
@@ -252,9 +248,7 @@ fn send_video(
 
       Ok(post.id)
     }
-    status -> {
-      io.debug(response)
-
+    status ->
       Error(
         "Error from server while sending video, HTTP status: "
         <> int.to_string(status)
@@ -263,7 +257,6 @@ fn send_video(
           Error(_) -> ""
         },
       )
-    }
   }
 }
 

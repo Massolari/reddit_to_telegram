@@ -132,7 +132,7 @@ fn apply_link(parsing: ParseResult) -> ParseResult {
         Ok(#(first, rest)) ->
           ParseResult(from: rest, result: parsing.result <> first <> ">")
         Error(Nil) -> {
-          io.debug("No closing '>' found after applying link style.")
+          io.println("No closing '>' found after applying link style.")
 
           ParseResult(from: new_markdown, result: parsing.result)
         }
@@ -158,7 +158,7 @@ fn apply_inline_code(parsing: ParseResult) -> ParseResult {
         Ok(#(first, rest)) ->
           ParseResult(from: rest, result: parsing.result <> first <> "</code>")
         Error(Nil) -> {
-          io.debug("No closing '</code>' found after applying inline code.")
+          io.println("No closing '</code>' found after applying inline code.")
 
           ParseResult(from: new_markdown, result: parsing.result)
         }
@@ -204,7 +204,7 @@ fn apply_quote(parsing: ParseResult) -> ParseResult {
             result: parsing.result <> first <> "</blockquote>",
           )
         Error(Nil) -> {
-          io.debug(
+          io.println(
             "No closing '</blockquote>' found after applying quote style.",
           )
 
@@ -263,7 +263,9 @@ fn apply_code_block(
         Ok(#(first, rest)) ->
           ParseResult(from: rest, result: parsing.result <> first <> "</pre>")
         Error(Nil) -> {
-          io.debug("No closing '</pre>' found after applying code block style.")
+          io.println(
+            "No closing '</pre>' found after applying code block style.",
+          )
 
           ParseResult(from: new_markdown, result: parsing.result)
         }

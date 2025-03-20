@@ -1,5 +1,4 @@
 import gleam/dynamic/decode
-import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
@@ -7,6 +6,7 @@ import sqlight.{type Connection}
 
 pub type Error {
   OpenError(sqlight.Error)
+  CreateTableError(sqlight.Error)
 }
 
 pub fn connect() -> Result(Connection, Error) {
@@ -31,7 +31,7 @@ fn setup(connection: Connection) {
 
   create_sent_messages_table
   |> sqlight.exec(on: connection)
-  |> result.map_error(io.debug)
+  |> result.map_error(CreateTableError)
 }
 
 pub fn get_messages(

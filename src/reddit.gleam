@@ -86,10 +86,7 @@ fn get_token(data: AppData) -> Result(String, String) {
   |> result.try(fn(response) {
     response.body
     |> json.parse(decode.at(["access_token"], decode.string))
-    |> result.map_error(fn(_) {
-      io.debug(response)
-      "Error decoding the token"
-    })
+    |> result.replace_error("Error decoding the token")
   })
 }
 
@@ -336,10 +333,7 @@ pub fn get_video(url: String) -> Result(String, String) {
     request
     |> request.set_body(bytes_tree.new())
     |> hackney.send_bits
-    |> result.map_error(fn(e) {
-      io.debug(e)
-      "Error getting video"
-    }),
+    |> result.replace_error("Error getting video"),
   )
   io.println("Downloaded video")
 
